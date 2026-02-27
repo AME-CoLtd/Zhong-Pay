@@ -3,8 +3,7 @@
     <el-card class="w-full max-w-md shadow-2xl border-0 rounded-2xl" body-style="padding: 40px 48px;">
       <!-- Logo -->
       <div class="text-center mb-9">
-        <img src="/logo.png" alt="众支付" class="h-14 mx-auto mb-3 object-contain" />
-        <p class="text-gray-400 text-sm">开源聚合支付管理系统</p>
+        <img src="/bt-logo.png" alt="众支付" class="h-16 mx-auto object-contain" />
       </div>
 
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="onSubmit">

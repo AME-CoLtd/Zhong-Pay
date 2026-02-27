@@ -56,3 +56,6 @@ worker-configuration.d.ts
 
 # Docker
 docker/nginx/ssl/
+
+# Logo 素材（不追踪原始素材）
+logo/

@@ -6,20 +6,15 @@
       class="sidebar transition-all duration-300 flex flex-col"
     >
       <!-- Logo -->
-      <div class="flex items-center h-16 px-4 border-b border-white/10 flex-shrink-0 overflow-hidden"
-           :class="collapsed ? 'justify-center' : 'gap-2 justify-start'">
+      <div
+        class="flex items-center justify-center h-16 border-b border-white/10 flex-shrink-0 overflow-hidden px-3"
+      >
         <img
-          src="/logo.png"
+          src="/bt-logo.png"
           alt="众支付"
-          :class="collapsed ? 'logo-icon' : 'logo-icon'"
-          class="transition-all duration-300 object-contain flex-shrink-0"
-          @error="(e) => ((e.target as HTMLImageElement).style.display='none')"
+          :style="collapsed ? 'width:36px;height:36px;object-fit:contain' : 'width:148px;height:40px;object-fit:contain'"
+          class="transition-all duration-300"
         />
-        <span
-          v-if="!collapsed"
-          class="text-white font-bold text-base tracking-wide whitespace-nowrap select-none"
-          style="text-shadow: 0 1px 3px rgba(0,0,0,0.3);"
-        >众支付</span>
       </div>
 
       <!-- 菜单 -->
@@ -153,31 +148,32 @@ function handleCommand(cmd: string) {
   background-color: #409eff;
 }
 
-/* 折叠时：正方形小图标 */
-.logo-icon {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-}
-
-/* 展开时：完整 logo */
-.logo-full {
-  width: 140px;
-  height: 40px;
-}
-
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
+/* 菜单项：图标严格居中，悬停/激活样式 */
 :deep(.el-menu-item) {
   border-radius: 6px;
   margin: 2px 8px;
   height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+:deep(.el-menu--collapse .el-menu-item) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 2px 8px;
+}
+:deep(.el-menu--collapse .el-menu-item .el-icon) {
+  margin: 0 !important;
 }
 :deep(.el-menu-item.is-active) {
   background-color: #409eff !important;
 }
 :deep(.el-menu-item:hover) {
-  background-color: rgba(255,255,255,0.08) !important;
+  background-color: rgba(255,255,255,0.10) !important;
 }
 </style>

@@ -103,6 +103,34 @@ import { Message, ChatDotRound } from '@element-plus/icons-vue';
 import request from '@/utils/request';
 
 // ---- 内联子组件：配置表格 ----
+const CONFIG_LABELS: Record<string, string> = {
+  platform_fee_rate:           '平台手续费率',
+  min_withdraw_amount:         '最小提现金额',
+  max_withdraw_amount:         '最大提现金额',
+  order_expire_minutes:        '订单超时时间',
+  email_from:                  '发件邮箱地址',
+  email_from_name:             '发件人名称',
+  email_auth_code:             '邮箱授权码',
+  sms_tencent_secret_id:       '腾讯云 SecretId',
+  sms_tencent_secret_key:      '腾讯云 SecretKey',
+  sms_tencent_sdk_app_id:      '短信应用 AppId',
+  sms_tencent_sign_name:       '短信签名',
+  sms_tencent_template_id:     '短信模板 ID',
+  sms_aliyun_access_key_id:    '阿里云 AccessKeyId',
+  sms_aliyun_access_key_secret:'阿里云 AccessKeySecret',
+  sms_aliyun_sign_name:        '短信签名名称',
+  sms_aliyun_template_code:    '短信模板 CODE',
+  sms_baidu_access_key:        '百度云 Access Key',
+  sms_baidu_secret_key:        '百度云 Secret Key',
+  sms_baidu_invoke_id:         '短信服务 Invoke Id',
+  sms_baidu_signature_id:      '签名 ID',
+  sms_volc_access_key_id:      '火山引擎 AccessKeyId',
+  sms_volc_secret_access_key:  '火山引擎 SecretKey',
+  sms_volc_sms_account:        '短信账号',
+  sms_volc_sign_name:          '短信签名',
+  sms_volc_template_id:        '模板 ID',
+};
+
 const ConfigTable = defineComponent({
   props: { items: Array as () => any[] },
   emits: ['edit'],
@@ -110,17 +138,24 @@ const ConfigTable = defineComponent({
     return () =>
       h('div', { class: 'divide-y divide-gray-100' },
         (props.items ?? []).map((item: any) =>
-          h('div', { class: 'flex items-center justify-between py-3 px-1' }, [
+          h('div', {
+            class: 'flex items-center justify-between py-3 px-3 rounded-lg hover:bg-gray-50 transition-colors group',
+          }, [
             h('div', { class: 'flex-1 min-w-0 mr-4' }, [
               h('div', { class: 'flex items-center gap-2' }, [
-                h('code', { class: 'text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600' }, item.key),
+                h('span', { class: 'text-sm font-medium text-gray-700' },
+                  CONFIG_LABELS[item.key] || item.key
+                ),
                 item.value
-                  ? h('span', { class: 'text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded' }, '已配置')
-                  : h('span', { class: 'text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded' }, '未配置'),
+                  ? h('span', { class: 'text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200' }, '已配置')
+                  : h('span', { class: 'text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200' }, '未配置'),
               ]),
-              h('div', { class: 'text-xs text-gray-400 mt-0.5 truncate' }, item.remark),
+              h('div', { class: 'text-xs text-gray-400 mt-0.5' }, item.remark),
             ]),
-            h('el-button', { type: 'primary', link: true, size: 'small', onClick: () => emit('edit', item) }, '编辑'),
+            h('button', {
+              class: 'px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 hover:border-blue-300 rounded-md transition-all cursor-pointer opacity-0 group-hover:opacity-100',
+              onClick: () => emit('edit', item),
+            }, '编辑'),
           ])
         )
       );
