@@ -189,7 +189,7 @@ const ConfigTable = defineComponent({
               h('div', { class: 'text-xs text-gray-400 mt-0.5' }, item.remark),
             ]),
             h('button', {
-              class: 'px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white active:bg-blue-700 rounded-md transition-all cursor-pointer flex-shrink-0',
+              class: 'px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white active:bg-blue-700 rounded-md transition-all cursor-pointer flex-shrink-0 outline-none border-0',
               onClick: () => emit('edit', item),
             }, '编辑'),
           ])
