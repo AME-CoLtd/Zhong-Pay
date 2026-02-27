@@ -76,3 +76,19 @@ authRoutes.post('/bind-phone', authenticate(), async (c) => {
   await updateAdminPhone(c.env.DB, id, phone);
   return c.json({ code: 0, message: '手机号绑定成功' });
 });
+
+// 发送邮箱验证码（需配置邮件服务，当前仅 mock）
+authRoutes.post('/send-email-code', authenticate(), async (c) => {
+  const { email } = await c.req.json();
+  if (!email) return c.json({ code: 400, message: '请输入邮箱' }, 400);
+  // TODO: 集成邮件服务后实现真实发送
+  return c.json({ code: 0, message: '验证码已发送（当前为测试模式，请跳过验证码直接提交）' });
+});
+
+// 发送短信验证码（需配置短信服务，当前仅 mock）
+authRoutes.post('/send-sms-code', authenticate(), async (c) => {
+  const { phone } = await c.req.json();
+  if (!phone) return c.json({ code: 400, message: '请输入手机号' }, 400);
+  // TODO: 集成短信服务后实现真实发送
+  return c.json({ code: 0, message: '验证码已发送（当前为测试模式，请跳过验证码直接提交）' });
+});

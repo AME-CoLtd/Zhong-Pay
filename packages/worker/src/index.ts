@@ -18,6 +18,8 @@ import { orderRoutes } from './routes/orders';
 import { merchantRoutes } from './routes/merchants';
 import { notifyRoutes } from './routes/notify';
 import { statsRoutes } from './routes/stats';
+import { configRoutes } from './routes/configs';
+import { withdrawalRoutes } from './routes/withdrawals';
 import { rateLimiter } from './middlewares/rateLimiter';
 
 export interface Env {
@@ -48,9 +50,13 @@ app.use('*', secureHeaders());
 
 // CORS
 app.use('*', async (c, next) => {
-  const allowedOrigins = c.env.ALLOWED_ORIGINS?.split(',') || ['*'];
+  const allowedOrigins = c.env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) || [];
+  const origin = allowedOrigins.length > 0 ? allowedOrigins : [
+    'https://admin.pay.amevn.site',
+    'https://zhong-pay-admin.pages.dev',
+  ];
   return cors({
-    origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,
+    origin: (o) => (origin.includes('*') || origin.includes(o) ? o : origin[0]),
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],
@@ -72,6 +78,8 @@ app.route('/api/orders', orderRoutes);
 app.route('/api/merchants', merchantRoutes);
 app.route('/api/notify', notifyRoutes);
 app.route('/api/stats', statsRoutes);
+app.route('/api/configs', configRoutes);
+app.route('/api/withdrawals', withdrawalRoutes);
 
 // 404
 app.notFound((c) => c.json({ code: 404, message: '接口不存在' }, 404));

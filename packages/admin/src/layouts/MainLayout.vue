@@ -6,13 +6,20 @@
       class="sidebar transition-all duration-300 flex flex-col"
     >
       <!-- Logo -->
-      <div class="flex items-center justify-center h-16 px-4 border-b border-white/10 flex-shrink-0 overflow-hidden">
+      <div class="flex items-center h-16 px-4 border-b border-white/10 flex-shrink-0 overflow-hidden"
+           :class="collapsed ? 'justify-center' : 'gap-2 justify-start'">
         <img
           src="/logo.png"
           alt="众支付"
-          :class="collapsed ? 'logo-icon' : 'logo-full'"
-          class="transition-all duration-300 object-contain"
+          :class="collapsed ? 'logo-icon' : 'logo-icon'"
+          class="transition-all duration-300 object-contain flex-shrink-0"
+          @error="(e) => ((e.target as HTMLImageElement).style.display='none')"
         />
+        <span
+          v-if="!collapsed"
+          class="text-white font-bold text-base tracking-wide whitespace-nowrap select-none"
+          style="text-shadow: 0 1px 3px rgba(0,0,0,0.3);"
+        >众支付</span>
       </div>
 
       <!-- 菜单 -->
@@ -150,8 +157,7 @@ function handleCommand(cmd: string) {
 .logo-icon {
   width: 36px;
   height: 36px;
-  object-fit: cover;
-  object-position: left center;
+  object-fit: contain;
 }
 
 /* 展开时：完整 logo */
