@@ -1,0 +1,42 @@
+{
+  "name": "zhong-pay-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "e6e1045231f65ada7a4a121cc569f852",
+
+  "vars": {
+    "NODE_ENV": "production",
+    "PLATFORM_NAME": "众支付"
+  },
+
+  // D1 数据库
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "zhong-pay-db",
+      "database_id": "2ff5ea0d-c9f5-4eb5-ba73-7dc93c83e167"
+    }
+  ],
+
+  // KV 存储（用于限流/缓存）
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "4574ac4b8c8c40bc83193043988b9cef",
+      "preview_id": "d13dc7a1d1a24607a0dc8d30bddeca96"
+    }
+  ],
+
+  // 多环境
+  "env": {
+    "staging": {
+      "name": "zhong-pay-worker-staging",
+      "vars": { "NODE_ENV": "staging" }
+    },
+    "production": {
+      "name": "zhong-pay-worker",
+      "vars": { "NODE_ENV": "production" }
+    }
+  }
+}

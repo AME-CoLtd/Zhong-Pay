@@ -21,10 +21,11 @@ import { statsRoutes } from './routes/stats';
 import { rateLimiter } from './middlewares/rateLimiter';
 
 export interface Env {
+  // D1 数据库
+  DB: D1Database;
   // KV 存储（限流/缓存）
   KV: KVNamespace;
   // 环境变量（通过 wrangler secret put 设置）
-  DATABASE_URL: string;
   JWT_SECRET: string;
   ALIPAY_APP_ID: string;
   ALIPAY_PRIVATE_KEY: string;

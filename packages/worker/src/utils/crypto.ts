@@ -58,6 +58,7 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  // PBKDF2 格式
   if (stored.startsWith('pbkdf2:')) {
     const [, saltHex, hashHex] = stored.split(':');
     const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
@@ -70,6 +71,10 @@ export async function verifyPassword(password: string, stored: string): Promise<
     );
     const computed = Array.from(new Uint8Array(bits)).map((b) => b.toString(16).padStart(2, '0')).join('');
     return computed === hashHex;
+  }
+  // 首次部署兼容：plain: 前缀明文比对（登录后自动升级）
+  if (stored.startsWith('plain:')) {
+    return password === stored.slice(6);
   }
   return false;
 }
