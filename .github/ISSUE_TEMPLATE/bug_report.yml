@@ -1,0 +1,118 @@
+name: 🐛 Bug 报告
+description: 提交一个 Bug，帮助我们改进众支付
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你抽出时间填写 Bug 报告！提交前请先查阅 [FAQ 文档](https://github.com/AME-dev/zhong-pay/blob/main/docs/faq.md) 和 [已有 Issues](https://github.com/AME-dev/zhong-pay/issues)，避免重复提交。
+        
+        > 本项目由 **AME** 开发维护 · [GitHub](https://github.com/AME-dev)
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐛 Bug 描述
+      description: 请简洁清晰地描述遇到的问题
+      placeholder: 描述 Bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: 🔁 复现步骤
+      description: 请描述如何触发此 Bug
+      placeholder: |
+        1. 进入 '...'
+        2. 点击 '...'
+        3. 看到错误 '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ 期望行为
+      description: 描述你期望发生什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ 实际行为
+      description: 描述实际发生了什么
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deploy-type
+    attributes:
+      label: 🚀 部署方式
+      options:
+        - Docker（服务器）
+        - Vercel
+        - Cloudflare Workers
+        - 本地开发环境
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bug-module
+    attributes:
+      label: 📦 问题模块
+      options:
+        - 支付下单（统一下单接口）
+        - 支付回调（Notify）
+        - 管理后台 - 登录
+        - 管理后台 - 订单管理
+        - 管理后台 - 商户管理
+        - 管理后台 - 数据统计
+        - 数据库 / 迁移
+        - 部署 / 配置
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 📌 众支付版本
+      placeholder: "例如: v1.0.0 或 commit hash"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: 🟢 Node.js 版本
+      placeholder: "例如: v20.11.0"
+
+  - type: input
+    id: os
+    attributes:
+      label: 💻 操作系统
+      placeholder: "例如: Ubuntu 22.04 / macOS 14 / Windows 11"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 错误日志 / 截图
+      description: 请粘贴相关的错误日志或附上截图（可直接拖拽图片上传）
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 提交前确认
+      options:
+        - label: 我已查阅 [FAQ 文档](https://github.com/AME-dev/zhong-pay/blob/main/docs/faq.md)
+          required: true
+        - label: 我已搜索过现有 Issues，确认不是重复问题
+          required: true
+        - label: 我提供的信息足够复现此问题
+          required: true

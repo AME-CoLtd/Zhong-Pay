@@ -1,0 +1,18 @@
+name: 🏷️ 初始化仓库标签
+
+on:
+  workflow_dispatch:   # 仅手动触发（仓库初始化时运行一次）
+
+jobs:
+  sync-labels:
+    name: 同步 Labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 同步标签到仓库
+        uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          delete-other-labels: false   # 不删除已有标签

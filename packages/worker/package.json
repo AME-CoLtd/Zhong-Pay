@@ -1,0 +1,29 @@
+{
+  "name": "@zhong-pay/worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "众支付 Cloudflare Worker 适配层",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@prisma/adapter-d1": "^5.8.0",
+    "@prisma/client": "^5.8.0",
+    "hono": "^4.0.0",
+    "hono-rate-limiter": "^0.4.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/uuid": "^9.0.7",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.22.1"
+  }
+}

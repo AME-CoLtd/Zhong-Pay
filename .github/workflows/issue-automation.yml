@@ -1,0 +1,177 @@
+name: 🤖 Issue 自动化处理
+
+on:
+  issues:
+    types: [opened, labeled, closed, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  # ============================================================
+  # 新 Issue 自动回复 + 标签分配
+  # ============================================================
+  auto-triage:
+    name: 自动分类 & 回复
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    permissions:
+      issues: write
+
+    steps:
+      - name: 读取 Issue 信息
+        id: issue-info
+        run: |
+          LABELS='${{ toJson(github.event.issue.labels.*.name) }}'
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          echo "title=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+
+      # ---- Bug 报告自动回复 ----
+      - name: 回复 Bug 报告
+        if: contains(github.event.issue.labels.*.name, 'bug')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 👋 感谢你的 Bug 报告！
+
+            你好 @${{ github.event.issue.user.login }}，感谢你花时间反馈这个问题！
+
+            **我们已收到你的报告**，维护团队（AME）将尽快核查并处理。
+
+            在此期间，你可以：
+            - 📖 查阅 [FAQ 文档](https://github.com/${{ github.repository }}/blob/main/docs/faq.md) 看是否有解决方案
+            - 🔍 查看 [同类 Issues](https://github.com/${{ github.repository }}/issues?q=is%3Aissue+label%3Abug) 是否有相关讨论
+            - 💬 前往 [Discussions](https://github.com/${{ github.repository }}/discussions) 与社区交流
+
+            > 如需加快处理，请确保已提供完整的**复现步骤**和**错误日志**。
+            
+            ---
+            *本回复由 AME 自动化系统发送*`
+            })
+
+      # ---- 功能建议自动回复 ----
+      - name: 回复功能建议
+        if: contains(github.event.issue.labels.*.name, 'enhancement')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 💡 感谢你的功能建议！
+
+            你好 @${{ github.event.issue.user.login }}，我们收到了你的功能建议！
+
+            **接下来的流程：**
+            1. 📋 维护团队（AME）将评估可行性和优先级
+            2. 💬 可能会在此 Issue 下进行讨论，欢迎参与
+            3. 🚀 通过评审后会进入开发计划
+
+            **想加速这个功能的实现？**
+            - 👍 点赞此 Issue 增加优先级权重
+            - 🔧 欢迎直接提交 PR 实现，参考 [贡献指南](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md)
+
+            ---
+            *本回复由 AME 自动化系统发送*`
+            })
+
+      # ---- 使用疑问自动回复 ----
+      - name: 回复使用疑问
+        if: contains(github.event.issue.labels.*.name, 'question')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🙋 你好！我们来帮你解决问题
+
+            你好 @${{ github.event.issue.user.login }}，感谢你使用众支付！
+
+            **在等待回复期间，以下资源可能帮助你快速解决问题：**
+
+            | 资源 | 链接 |
+            |------|------|
+            | 📖 FAQ 常见问题 | [docs/faq.md](https://github.com/${{ github.repository }}/blob/main/docs/faq.md) |
+            | 🐳 Docker 部署指南 | [docs/deploy-docker.md](https://github.com/${{ github.repository }}/blob/main/docs/deploy-docker.md) |
+            | ▲ Vercel 部署指南 | [docs/deploy-vercel.md](https://github.com/${{ github.repository }}/blob/main/docs/deploy-vercel.md) |
+            | ☁️ Cloudflare 部署指南 | [docs/deploy-cloudflare.md](https://github.com/${{ github.repository }}/blob/main/docs/deploy-cloudflare.md) |
+            | 🔌 API 文档 | [docs/api.md](https://github.com/${{ github.repository }}/blob/main/docs/api.md) |
+            | 💬 社区讨论 | [GitHub Discussions](https://github.com/${{ github.repository }}/discussions) |
+
+            维护团队（AME）会尽快回复！
+
+            ---
+            *本回复由 AME 自动化系统发送*`
+            })
+
+  # ============================================================
+  # Issue 关闭时自动感谢
+  # ============================================================
+  auto-close-thanks:
+    name: 关闭时致谢
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    permissions:
+      issues: write
+
+    steps:
+      - name: 发送感谢评论
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 只对非 wontfix / duplicate / invalid 的关闭发送感谢
+            const labels = context.payload.issue.labels.map(l => l.name);
+            const skipLabels = ['wontfix', 'duplicate', 'invalid'];
+            if (skipLabels.some(l => labels.includes(l))) return;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ✅ 此 Issue 已关闭
+
+            感谢 @${{ github.event.issue.user.login }} 的反馈，以及参与讨论的所有人！
+
+            如果问题**仍未解决**，欢迎：
+            - 💬 继续在此 Issue 下评论
+            - 🔄 重新打开此 Issue（附上更多信息）
+            - 📖 查阅 [FAQ 文档](https://github.com/${{ github.repository }}/blob/main/docs/faq.md)
+
+            感谢支持众支付 ⭐ — **AME**`
+            })
+
+  # ============================================================
+  # 自动给 30 天无活动的 Issue 添加 stale 标签
+  # ============================================================
+  stale-issues:
+    name: 过期 Issue 清理
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      issues: write
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: |
+            👋 此 Issue 已超过 30 天没有活动。
+            
+            如果问题仍然存在，请回复此评论或提供更多信息，我们会继续跟进。
+            否则，此 Issue 将在 7 天后自动关闭。
+            
+            — AME 自动化系统
+          close-issue-message: |
+            由于长时间无活动，此 Issue 已自动关闭。
+            如问题仍存在，欢迎重新开启或提交新 Issue。
+          stale-issue-label: "stale"
+          days-before-stale: 30
+          days-before-close: 7
+          exempt-issue-labels: "pinned,security,in-progress,help wanted"

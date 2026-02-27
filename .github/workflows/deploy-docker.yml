@@ -1,0 +1,145 @@
+name: Deploy to Docker Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: '跳过构建，直接拉取最新镜像'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      server_image: ${{ steps.meta-server.outputs.tags }}
+      admin_image: ${{ steps.meta-admin.outputs.tags }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta (server)
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/server
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Docker meta (admin)
+        id: meta-admin
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/admin
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & Push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./packages/server
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build admin
+        working-directory: packages/admin
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Build & Push admin image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./packages/admin
+          push: true
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Server via SSH
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy deploy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "docker-compose.yml,docker/,packages/server/.env.example"
+          target: "/opt/zhongpay"
+          overwrite: true
+
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/zhongpay
+
+            # 写入环境变量
+            cat > .env << 'ENVEOF'
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+            ALIPAY_APP_ID=${{ secrets.ALIPAY_APP_ID }}
+            ALIPAY_PRIVATE_KEY=${{ secrets.ALIPAY_PRIVATE_KEY }}
+            ALIPAY_PUBLIC_KEY=${{ secrets.ALIPAY_PUBLIC_KEY }}
+            ALIPAY_NOTIFY_URL=${{ secrets.ALIPAY_NOTIFY_URL }}
+            WECHAT_APP_ID=${{ secrets.WECHAT_APP_ID }}
+            WECHAT_MCH_ID=${{ secrets.WECHAT_MCH_ID }}
+            WECHAT_API_KEY=${{ secrets.WECHAT_API_KEY }}
+            WECHAT_NOTIFY_URL=${{ secrets.WECHAT_NOTIFY_URL }}
+            ENVEOF
+
+            # 拉取最新镜像
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ghcr.io/${{ github.repository }}/server:latest
+            docker pull ghcr.io/${{ github.repository }}/admin:latest
+
+            # 滚动更新（零停机）
+            docker-compose up -d --no-build --remove-orphans
+
+            # 运行数据库迁移
+            docker-compose exec -T server sh -c "npx prisma migrate deploy"
+
+            # 清理旧镜像
+            docker image prune -f
+
+            echo "✅ 部署完成！"
+            docker-compose ps

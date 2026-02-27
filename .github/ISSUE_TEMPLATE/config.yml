@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions（推荐）
+    url: https://github.com/AME-dev/zhong-pay/discussions
+    about: 使用交流、经验分享、开放讨论请前往 Discussions
+  - name: 📖 查阅文档
+    url: https://github.com/AME-dev/zhong-pay/tree/main/docs
+    about: 部署文档、API 文档、FAQ 等完整文档
+  - name: 🔒 安全漏洞报告
+    url: https://github.com/AME-dev/zhong-pay/security/advisories/new
+    about: 安全漏洞请通过 GitHub Private Vulnerability Reporting 私下提交

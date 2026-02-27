@@ -1,0 +1,60 @@
+name: 🗂️ 过期 Issue 自动清理
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 每天凌晨 2 点运行
+  workflow_dispatch:
+
+jobs:
+  stale:
+    name: 标记 & 关闭过期 Issue
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ---- Issue 过期配置 ----
+          days-before-issue-stale: 30
+          days-before-issue-close: 7
+          stale-issue-label: "stale"
+          stale-issue-message: |
+            👋 **此 Issue 已超过 30 天没有活动。**
+
+            如果问题仍然存在，请：
+            - 回复此评论保持 Issue 活跃
+            - 提供更多复现信息或错误日志
+
+            否则，此 Issue 将在 **7 天后自动关闭**。
+
+            感谢你的参与！— **AME**
+          close-issue-message: |
+            由于长时间无活动，此 Issue 已自动关闭。
+            如问题仍然存在，欢迎重新开启或[提交新 Issue](https://github.com/${{ github.repository }}/issues/new/choose)。
+
+            — **AME 自动化系统**
+
+          # ---- 豁免标签（这些标签的 Issue 不会被关闭）----
+          exempt-issue-labels: "pinned,security,in-progress,help wanted,confirmed,priority: critical,priority: high"
+
+          # ---- PR 过期配置（关闭搁置的 PR）----
+          days-before-pr-stale: 45
+          days-before-pr-close: 14
+          stale-pr-label: "stale"
+          stale-pr-message: |
+            👋 **此 PR 已超过 45 天没有活动。**
+
+            如需继续推进，请更新代码或回复此评论。
+            否则将在 **14 天后自动关闭**。
+
+            — **AME**
+          close-pr-message: |
+            由于长时间无活动，此 PR 已自动关闭。如需继续，欢迎重新开启。
+
+          exempt-pr-labels: "in-progress,pinned"
+
+          # 每次最多处理 30 条，避免 API 限流
+          operations-per-run: 30

@@ -1,0 +1,65 @@
+name: 🙋 使用疑问
+description: 部署或使用过程中遇到问题
+title: "[Question] "
+labels: ["question"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先查阅以下资料，通常能快速找到答案：
+        - 📖 [FAQ 常见问题](https://github.com/AME-dev/zhong-pay/blob/main/docs/faq.md)
+        - 📦 [部署文档](https://github.com/AME-dev/zhong-pay/tree/main/docs)
+        - 💬 [GitHub Discussions](https://github.com/AME-dev/zhong-pay/discussions)
+
+  - type: textarea
+    id: question
+    attributes:
+      label: ❓ 问题描述
+      description: 描述你遇到的疑问或困惑
+      placeholder: 我在...时遇到了问题...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deploy-type
+    attributes:
+      label: 🚀 部署方式
+      options:
+        - Docker（服务器）
+        - Vercel
+        - Cloudflare Workers
+        - 本地开发环境
+        - 其他 / 未部署
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 🔧 已尝试的方法
+      description: 你已经尝试了哪些解决方式
+      placeholder: 我尝试了...但是...
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 相关日志 / 截图（可选）
+      description: 可直接拖拽图片或粘贴日志
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: 📌 众支付版本
+      placeholder: "例如: v1.0.0"
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 提交前确认
+      options:
+        - label: 我已查阅 [FAQ 文档](https://github.com/AME-dev/zhong-pay/blob/main/docs/faq.md)
+          required: true
+        - label: 我已搜索过现有 Issues
+          required: true

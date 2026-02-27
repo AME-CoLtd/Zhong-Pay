@@ -1,0 +1,53 @@
+# PR 自动打标签规则
+# 根据 PR 修改的文件路径，自动添加对应标签
+
+"module: admin-ui":
+  - packages/admin/**
+
+"module: payment":
+  - packages/server/src/routes/pay.ts
+  - packages/server/src/routes/notify.ts
+  - packages/server/src/services/**
+
+"module: alipay":
+  - packages/server/src/services/alipay.service.ts
+  - packages/worker/src/routes/pay.ts
+
+"module: wechat":
+  - packages/server/src/services/wechat.service.ts
+
+"module: merchant":
+  - packages/server/src/routes/merchant.ts
+  - packages/worker/src/routes/merchants.ts
+
+"module: order":
+  - packages/server/src/routes/order.ts
+  - packages/worker/src/routes/orders.ts
+
+"module: database":
+  - packages/server/prisma/**
+
+"module: docker":
+  - docker/**
+  - docker-compose*.yml
+  - packages/server/Dockerfile
+  - packages/admin/Dockerfile
+
+"module: vercel":
+  - packages/server/vercel.json
+  - packages/admin/vercel.json
+  - packages/server/src/adapter/**
+
+"module: cloudflare":
+  - packages/worker/**
+  - packages/admin/_headers
+  - packages/admin/_redirects
+
+"module: deploy":
+  - scripts/**
+  - .github/workflows/deploy-*.yml
+
+"documentation":
+  - docs/**
+  - "*.md"
+  - .github/ISSUE_TEMPLATE/**

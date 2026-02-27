@@ -1,0 +1,19 @@
+众支付 (ZhongPay)
+Copyright (c) 2026 AME & Entertainment. All rights reserved.
+
+本项目由 AME & Entertainment 开发并维护。
+This project is developed and maintained by AME & Entertainment.
+
+官网 / Website: https://ame.dev
+GitHub: https://github.com/AME-dev
+邮箱 / Email: contact@ame.dev
+
+本软件包含以下第三方开源组件，各组件版权归其原作者所有：
+This product includes software developed by the open source community:
+
+- Express.js (MIT License) - https://expressjs.com
+- React (MIT License) - https://react.dev
+- Prisma (Apache 2.0) - https://prisma.io
+- Ant Design (MIT License) - https://ant.design
+- Hono (MIT License) - https://hono.dev
+- alipay-sdk (MIT License) - https://github.com/alipay/alipay-sdk-nodejs-all

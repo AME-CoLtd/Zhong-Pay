@@ -1,0 +1,84 @@
+name: 💡 功能建议
+description: 提出新功能或改进建议
+title: "[Feature] "
+labels: ["enhancement", "needs-discussion"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的建议！功能请求会进入讨论队列，不保证一定实现。
+        欢迎直接提交 PR 实现你的想法 → [贡献指南](https://github.com/AME-dev/zhong-pay/blob/main/CONTRIBUTING.md)
+        
+        > 本项目由 **AME** 开发维护
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 💡 功能描述
+      description: 简洁描述你希望添加的功能
+      placeholder: 我希望增加...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 🎯 使用场景
+      description: 在什么场景下需要这个功能？解决了什么问题？
+      placeholder: 当我需要...的时候，希望系统能够...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-module
+    attributes:
+      label: 📦 相关模块
+      options:
+        - 支付渠道（新增渠道）
+        - 订单管理
+        - 商户管理
+        - 提现管理
+        - 数据统计
+        - 系统配置
+        - 部署 / 运维
+        - 安全 / 权限
+        - API 接口
+        - 管理后台 UI
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⭐ 重要程度
+      options:
+        - 🔴 非常重要（严重影响使用）
+        - 🟠 比较重要（影响体验）
+        - 🟡 一般（锦上添花）
+        - 🟢 低优先级（长期建议）
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 📐 方案建议（可选）
+      description: 如果你有实现思路，可以在此描述
+      placeholder: 可以通过...方式实现...
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 🔗 参考资料（可选）
+      description: 相关链接、竞品截图、设计稿等
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 提交前确认
+      options:
+        - label: 我已搜索过现有 Issues，确认不是重复建议
+          required: true
+        - label: 我愿意参与此功能的讨论和测试

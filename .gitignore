@@ -1,0 +1,58 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 构建产物
+dist/
+build/
+.next/
+.nuxt/
+
+# 环境变量（不提交敏感配置）
+.env
+.env.local
+.env.production
+.env.staging
+# 保留示例文件
+!.env.example
+!packages/**/.env.example
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+
+# 支付证书（非常重要！绝不提交）
+*.pem
+*.p12
+*.pfx
+*.key
+*.crt
+certs/
+
+# 数据库
+*.sqlite
+*.db
+
+# 编辑器
+.DS_Store
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# 运行时
+.seeded
+pids/
+*.pid
+
+# Vercel
+.vercel
+
+# Cloudflare
+.wrangler/
+worker-configuration.d.ts
+
+# Docker
+docker/nginx/ssl/

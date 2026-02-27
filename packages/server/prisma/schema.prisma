@@ -1,0 +1,244 @@
+// Prisma Schema - 众支付系统数据模型
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 管理员
+model Admin {
+  id        String    @id @default(uuid())
+  username  String    @unique
+  password  String
+  email     String?   @unique
+  phone     String?   @unique
+  role      AdminRole @default(STAFF)
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("admins")
+}
+
+// 商户
+model Merchant {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  apiKey      String   @unique
+  apiSecret   String
+  notifyUrl   String?
+  returnUrl   String?
+  status      MerchantStatus @default(ACTIVE)
+  balance     Decimal  @default(0) @db.Decimal(18, 2)
+  totalIncome Decimal  @default(0) @db.Decimal(18, 2)
+  feeRate     Decimal  @default(0) @db.Decimal(5, 4)
+  remark      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+  withdrawals Withdrawal[]
+  settlements Settlement[]
+
+  @@map("merchants")
+}
+
+// 支付订单
+model Order {
+  id             String      @id @default(uuid())
+  orderNo        String      @unique
+  merchantId     String
+  merchant       Merchant    @relation(fields: [merchantId], references: [id])
+  outTradeNo     String                        // 商户订单号
+  subject        String                        // 商品描述
+  body           String?                       // 商品详情
+  amount         Decimal     @db.Decimal(18, 2) // 订单金额
+  actualAmount   Decimal?    @db.Decimal(18, 2) // 实际支付金额
+  feeAmount      Decimal?    @db.Decimal(18, 2) // 手续费
+  currency       String      @default("CNY")
+  payType        PayType                        // 支付方式
+  channel        PayChannel                    // 支付渠道
+  status         OrderStatus @default(PENDING)
+  thirdTradeNo   String?                       // 第三方交易号
+  clientIp       String?
+  deviceInfo     String?
+  extra          Json?                         // 扩展参数
+  notifyUrl      String?
+  returnUrl      String?
+  notifiedAt     DateTime?                     // 回调时间
+  notifyCount    Int         @default(0)
+  paidAt         DateTime?
+  expiredAt      DateTime?
+  closedAt       DateTime?
+  refundedAmount Decimal?    @db.Decimal(18, 2)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  refunds        Refund[]
+
+  @@index([merchantId])
+  @@index([outTradeNo])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// 退款记录
+model Refund {
+  id           String       @id @default(uuid())
+  refundNo     String       @unique
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id])
+  amount       Decimal      @db.Decimal(18, 2)
+  reason       String?
+  status       RefundStatus @default(PENDING)
+  thirdRefundNo String?
+  refundedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([orderId])
+  @@map("refunds")
+}
+
+// 提现申请
+model Withdrawal {
+  id           String           @id @default(uuid())
+  withdrawNo   String           @unique
+  merchantId   String
+  merchant     Merchant         @relation(fields: [merchantId], references: [id])
+  amount       Decimal          @db.Decimal(18, 2)
+  actualAmount Decimal?         @db.Decimal(18, 2) // 到账金额
+  feeAmount    Decimal?         @db.Decimal(18, 2)
+  bankName     String?
+  bankAccount  String?
+  bankHolder   String?
+  status       WithdrawalStatus @default(PENDING)
+  remark       String?
+  auditRemark  String?
+  auditedAt    DateTime?
+  transferredAt DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([merchantId])
+  @@map("withdrawals")
+}
+
+// 结算记录
+model Settlement {
+  id          String           @id @default(uuid())
+  settleNo    String           @unique
+  merchantId  String
+  merchant    Merchant         @relation(fields: [merchantId], references: [id])
+  amount      Decimal          @db.Decimal(18, 2)
+  feeAmount   Decimal          @db.Decimal(18, 2)
+  netAmount   Decimal          @db.Decimal(18, 2)
+  orderCount  Int
+  status      SettlementStatus @default(PENDING)
+  settledAt   DateTime?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([merchantId])
+  @@map("settlements")
+}
+
+// 系统配置
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configs")
+}
+
+// 操作日志
+model OperationLog {
+  id         String   @id @default(uuid())
+  operator   String
+  operatorId String
+  action     String
+  module     String
+  targetId   String?
+  detail     Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([operatorId])
+  @@index([module])
+  @@map("operation_logs")
+}
+
+// 枚举类型
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+enum MerchantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PayType {
+  ALIPAY
+  WECHAT
+}
+
+enum PayChannel {
+  ALIPAY_PC
+  ALIPAY_WAP
+  ALIPAY_APP
+  ALIPAY_QRCODE
+  WECHAT_NATIVE
+  WECHAT_JSAPI
+  WECHAT_H5
+  WECHAT_APP
+  WECHAT_MINI
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CLOSED
+  REFUNDING
+  REFUNDED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  TRANSFERRED
+  FAILED
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
