@@ -20,12 +20,35 @@
         <ConfigTable :items="emailConfigs" @edit="openEdit" />
       </el-tab-pane>
 
+      <!-- 支付宝 -->
+      <el-tab-pane name="alipay">
+        <template #label>
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="#1677FF"><path d="M3 3h18v18H3z" fill="none"/><path d="M21.422 15.358c-2.418-.935-4.14-1.62-5.166-2.056a13.16 13.16 0 0 0 1.253-3.302H14V9h3.5V8H14V6.5h-1.5V8h-3v1h3v1h-2.81a11.3 11.3 0 0 1-1.063 3.06C7.088 12.22 5 11.5 5 13.25 5 15 6.5 16 8.5 16a6.37 6.37 0 0 0 4.5-2.062A38.3 38.3 0 0 1 19 17.5l2.422-2.142zM8.5 14.5c-1.25 0-2-.5-2-1.25S7.5 12 9 12.5a9.2 9.2 0 0 0 1.877.984A4.6 4.6 0 0 1 8.5 14.5z"/></svg>
+            支付宝配置
+          </span>
+        </template>
+        <el-alert title="填写支付宝开放平台的应用信息，需完成实名认证并创建应用后获取" type="info" show-icon :closable="false" class="mb-4" />
+        <ConfigTable :items="alipayConfigs" @edit="openEdit" />
+      </el-tab-pane>
+
+      <!-- 微信支付 -->
+      <el-tab-pane name="wechat">
+        <template #label>
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="#07C160"><path d="M9.5 4C5.358 4 2 6.91 2 10.5c0 2.012 1.013 3.805 2.61 5.007L4 18l2.5-1.25A8.4 8.4 0 0 0 9.5 17c.34 0 .676-.02 1.007-.057C10.185 16.32 10 15.678 10 15c0-3.038 2.91-5.5 6.5-5.5.34 0 .676.02 1.005.057C16.893 6.617 13.485 4 9.5 4z"/><path d="M16.5 10C13.462 10 11 12.015 11 14.5S13.462 19 16.5 19a7 7 0 0 0 2.5-.457L21 20l-.5-2.2A4.6 4.6 0 0 0 22 14.5C22 12.015 19.538 10 16.5 10z"/></svg>
+            微信支付配置
+          </span>
+        </template>
+        <el-alert title="填写微信支付商户平台的商户信息，需完成企业实名认证" type="info" show-icon :closable="false" class="mb-4" />
+        <ConfigTable :items="wechatConfigs" @edit="openEdit" />
+      </el-tab-pane>
+
       <!-- 短信 -->
       <el-tab-pane name="sms">
         <template #label>
           <span class="flex items-center gap-1"><el-icon><ChatDotRound /></el-icon> 短信配置</span>
-        </template>
-        <el-alert title="配置任意一个短信供应商即可启用短信验证码功能，优先级：腾讯云 > 阿里云 > 百度云 > 火山引擎" type="info" show-icon :closable="false" class="mb-4" />
+        </template>        <el-alert title="配置任意一个短信供应商即可启用短信验证码功能，优先级：腾讯云 > 阿里云 > 百度云 > 火山引擎" type="info" show-icon :closable="false" class="mb-4" />
 
         <el-collapse v-model="smsCollapse" class="border-0">
           <el-collapse-item name="tencent">
@@ -108,9 +131,22 @@ const CONFIG_LABELS: Record<string, string> = {
   min_withdraw_amount:         '最小提现金额',
   max_withdraw_amount:         '最大提现金额',
   order_expire_minutes:        '订单超时时间',
+  // 支付宝
+  alipay_app_id:               '应用 AppId',
+  alipay_private_key:          '应用私钥',
+  alipay_public_key:           '支付宝公钥',
+  alipay_notify_url:           '异步通知地址',
+  alipay_return_url:           '同步跳转地址',
+  // 微信支付
+  wechat_app_id:               '应用 AppId',
+  wechat_mch_id:               '商户号 MchId',
+  wechat_api_key:              'API 密钥（v3）',
+  wechat_notify_url:           '异步通知地址',
+  // 邮件
   email_from:                  '发件邮箱地址',
   email_from_name:             '发件人名称',
   email_auth_code:             '邮箱授权码',
+  // 短信
   sms_tencent_secret_id:       '腾讯云 SecretId',
   sms_tencent_secret_key:      '腾讯云 SecretKey',
   sms_tencent_sdk_app_id:      '短信应用 AppId',
@@ -153,7 +189,7 @@ const ConfigTable = defineComponent({
               h('div', { class: 'text-xs text-gray-400 mt-0.5' }, item.remark),
             ]),
             h('button', {
-              class: 'px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white active:bg-blue-700 border border-blue-200 hover:border-blue-600 rounded-md transition-all cursor-pointer flex-shrink-0',
+              class: 'px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white active:bg-blue-700 rounded-md transition-all cursor-pointer flex-shrink-0',
               onClick: () => emit('edit', item),
             }, '编辑'),
           ])
@@ -179,6 +215,21 @@ const generalConfigs = computed(() => makeItems([
   { key: 'min_withdraw_amount',  remark: '最小提现金额（元）' },
   { key: 'max_withdraw_amount',  remark: '最大提现金额（元）' },
   { key: 'order_expire_minutes', remark: '订单超时分钟数' },
+]));
+
+const alipayConfigs = computed(() => makeItems([
+  { key: 'alipay_app_id',      remark: '支付宝开放平台 → 我的应用 → AppId' },
+  { key: 'alipay_private_key', remark: '应用私钥（RSA2，PKCS8 格式，不含头尾标记）' },
+  { key: 'alipay_public_key',  remark: '支付宝公钥（非应用公钥，在开放平台接口加签页面获取）' },
+  { key: 'alipay_notify_url',  remark: '支付异步通知回调地址，如 https://z.pay.amevn.site/api/notify/alipay' },
+  { key: 'alipay_return_url',  remark: '支付成功后同步跳转地址（可选）' },
+]));
+
+const wechatConfigs = computed(() => makeItems([
+  { key: 'wechat_app_id',    remark: '微信公众号 / 小程序 AppId（微信支付商户平台绑定的应用）' },
+  { key: 'wechat_mch_id',    remark: '微信支付商户号（微信支付商户平台 → 账户中心 → 商户信息）' },
+  { key: 'wechat_api_key',   remark: 'APIv3 密钥（商户平台 → 账户中心 → API 安全 → 设置 APIv3 密钥）' },
+  { key: 'wechat_notify_url',remark: '支付异步通知回调地址，如 https://z.pay.amevn.site/api/notify/wechat' },
 ]));
 
 const emailConfigs = computed(() => makeItems([

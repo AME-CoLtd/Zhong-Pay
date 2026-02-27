@@ -10,9 +10,9 @@
         class="flex items-center justify-center h-16 border-b border-white/10 flex-shrink-0 overflow-hidden px-3"
       >
         <img
-          src="/bt-logo.png"
+          src="/bt-logo-white.png"
           alt="众支付"
-          :style="collapsed ? 'width:36px;height:36px;object-fit:contain' : 'width:148px;height:40px;object-fit:contain'"
+          :style="collapsed ? 'width:32px;height:32px;object-fit:contain' : 'width:140px;height:38px;object-fit:contain'"
           class="transition-all duration-300"
         />
       </div>
@@ -161,19 +161,30 @@ function handleCommand(cmd: string) {
   cursor: pointer;
 }
 :deep(.el-menu--collapse .el-menu-item) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 0 !important;
-  margin: 2px 8px;
+  margin: 2px 4px !important;
+  width: calc(100% - 8px) !important;
 }
 :deep(.el-menu--collapse .el-menu-item .el-icon) {
   margin: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 :deep(.el-menu-item.is-active) {
   background-color: #409eff !important;
 }
 :deep(.el-menu-item:hover) {
   background-color: rgba(255,255,255,0.10) !important;
+}
+/* 移除 collapse tooltip 的黑色边框 */
+:deep(.el-menu--collapse .el-tooltip__trigger) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 </style>
