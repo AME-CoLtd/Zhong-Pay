@@ -1,12 +1,10 @@
 # API 接口文档
 
-> **版权**：本文档及项目由 [AME](https://github.com/AME-dev) 维护，基于 Apache 2.0 开源。
-
+> **版权**：本文档及项目由 [AME](https://github.com/AME-CoLtd) 维护，基�?Apache 2.0 开源�?
 ## 基础信息
 
 - **Base URL（本地）**：`http://localhost:3000`
-- **Base URL（生产）**：你的部署域名
-- **数据格式**：`application/json`
+- **Base URL（生产）**：你的部署域�?- **数据格式**：`application/json`
 - **字符编码**：`UTF-8`
 
 ## 统一响应格式
@@ -15,40 +13,34 @@
 {
   "code": 0,          // 0 表示成功，非 0 表示失败
   "message": "成功",  // 提示信息
-  "data": {}          // 响应数据（失败时可能为空）
-}
+  "data": {}          // 响应数据（失败时可能为空�?}
 ```
 
-### 通用错误码
-
+### 通用错误�?
 | code | 说明 |
 |------|------|
 | `0` | 成功 |
 | `400` | 请求参数错误 |
 | `401` | 未认证或 Token 失效 |
-| `403` | 无权限 |
-| `404` | 资源不存在 |
+| `403` | 无权�?|
+| `404` | 资源不存�?|
 | `429` | 请求过于频繁 |
-| `500` | 服务器内部错误 |
+| `500` | 服务器内部错�?|
 
 ---
 
 ## 认证方式
 
-管理后台接口使用 **Bearer Token** 认证：
-
+管理后台接口使用 **Bearer Token** 认证�?
 ```http
 Authorization: Bearer <your_jwt_token>
 ```
 
-商户支付接口使用 **MD5 签名** 认证（见下方签名规则）。
-
+商户支付接口使用 **MD5 签名** 认证（见下方签名规则）�?
 ---
 
-## 一、管理认证接口
-
-### 1.1 管理员登录
-
+## 一、管理认证接�?
+### 1.1 管理员登�?
 ```http
 POST /api/auth/login
 ```
@@ -62,7 +54,7 @@ POST /api/auth/login
 }
 ```
 
-**成功响应：**
+**成功响应�?*
 
 ```json
 {
@@ -100,22 +92,19 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "oldPassword": "旧密码",
-  "newPassword": "新密码（最少8位）"
+  "oldPassword": "旧密�?,
+  "newPassword": "新密码（最�?位）"
 }
 ```
 
 ---
 
-## 二、支付接口（商户调用）
-
+## 二、支付接口（商户调用�?
 ### 签名规则
 
-1. 将所有非空参数（除 `sign` 外）按**字段名 ASCII 码升序**排列
-2. 拼接成 `key1=val1&key2=val2` 格式字符串
-3. 末尾拼接 `&key=<你的API_SECRET>`
-4. 对整个字符串做 **MD5** 取值，转大写
-
+1. 将所有非空参数（�?`sign` 外）�?*字段�?ASCII 码升�?*排列
+2. 拼接�?`key1=val1&key2=val2` 格式字符�?3. 末尾拼接 `&key=<你的API_SECRET>`
+4. 对整个字符串�?**MD5** 取值，转大�?
 **示例（Node.js）：**
 
 ```javascript
@@ -140,28 +129,28 @@ POST /api/pay/unified
 Content-Type: application/json
 ```
 
-**请求参数：**
+**请求参数�?*
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `apiKey` | string | ✅ | 商户 API Key |
-| `outTradeNo` | string | ✅ | 商户订单号（唯一） |
-| `subject` | string | ✅ | 商品名称 |
-| `amount` | number | ✅ | 订单金额（元，最小 0.01） |
-| `channel` | string | ✅ | 支付渠道（见下表） |
-| `sign` | string | ✅ | MD5 签名 |
-| `body` | string | ❌ | 商品详情 |
-| `notifyUrl` | string | ❌ | 回调地址（覆盖商户配置） |
-| `returnUrl` | string | ❌ | 支付完成跳转地址 |
-| `clientIp` | string | ❌ | 客户端 IP |
+| `apiKey` | string | �?| 商户 API Key |
+| `outTradeNo` | string | �?| 商户订单号（唯一�?|
+| `subject` | string | �?| 商品名称 |
+| `amount` | number | �?| 订单金额（元，最�?0.01�?|
+| `channel` | string | �?| 支付渠道（见下表�?|
+| `sign` | string | �?| MD5 签名 |
+| `body` | string | �?| 商品详情 |
+| `notifyUrl` | string | �?| 回调地址（覆盖商户配置） |
+| `returnUrl` | string | �?| 支付完成跳转地址 |
+| `clientIp` | string | �?| 客户�?IP |
 
 **支付渠道（channel）：**
 
-| 渠道值 | 说明 |
+| 渠道�?| 说明 |
 |--------|------|
-| `ALIPAY_PC` | 支付宝 PC 网站支付 |
-| `ALIPAY_WAP` | 支付宝手机网站支付 |
-| `ALIPAY_QRCODE` | 支付宝扫码支付 |
+| `ALIPAY_PC` | 支付�?PC 网站支付 |
+| `ALIPAY_WAP` | 支付宝手机网站支�?|
+| `ALIPAY_QRCODE` | 支付宝扫码支�?|
 | `WECHAT_NATIVE` | 微信 Native 扫码支付 |
 | `WECHAT_H5` | 微信 H5 支付 |
 
@@ -196,22 +185,21 @@ Content-Type: application/json
 
 ---
 
-### 2.2 查询订单状态
-
+### 2.2 查询订单状�?
 ```http
 GET /api/pay/query?apiKey=xx&orderNo=xx&sign=xx
 ```
 
-**请求参数：**
+**请求参数�?*
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
-| `apiKey` | ✅ | 商户 API Key |
-| `orderNo` | 二选一 | 平台订单号 |
-| `outTradeNo` | 二选一 | 商户订单号 |
-| `sign` | ✅ | MD5 签名 |
+| `apiKey` | �?| 商户 API Key |
+| `orderNo` | 二选一 | 平台订单�?|
+| `outTradeNo` | 二选一 | 商户订单�?|
+| `sign` | �?| MD5 签名 |
 
-**响应：**
+**响应�?*
 
 ```json
 {
@@ -229,23 +217,21 @@ GET /api/pay/query?apiKey=xx&orderNo=xx&sign=xx
 
 **订单状态：**
 
-| 状态 | 说明 |
+| 状�?| 说明 |
 |------|------|
-| `PENDING` | 待支付 |
-| `PAID` | 已支付 |
-| `CLOSED` | 已关闭 |
+| `PENDING` | 待支�?|
+| `PAID` | 已支�?|
+| `CLOSED` | 已关�?|
 | `REFUNDING` | 退款中 |
-| `REFUNDED` | 已退款 |
+| `REFUNDED` | 已退�?|
 | `FAILED` | 失败 |
 
 ---
 
 ## 三、支付回调通知
 
-### 3.1 商户回调接收（由众支付主动通知）
-
-支付成功后，众支付会向商户配置的 `notifyUrl` 发送 POST 请求：
-
+### 3.1 商户回调接收（由众支付主动通知�?
+支付成功后，众支付会向商户配置的 `notifyUrl` 发�?POST 请求�?
 ```json
 {
   "orderNo": "ZP202401011234001",
@@ -256,30 +242,25 @@ GET /api/pay/query?apiKey=xx&orderNo=xx&sign=xx
 }
 ```
 
-> 商户系统需返回 HTTP 200 状态码，否则系统将重试（最多 5 次，间隔递增）。
-
+> 商户系统需返回 HTTP 200 状态码，否则系统将重试（最�?5 次，间隔递增）�?
 ---
 
-### 3.2 支付宝异步回调
-
+### 3.2 支付宝异步回�?
 ```http
 POST /api/notify/alipay
 ```
 
-由支付宝直接调用，内部处理后返回 `success` 字符串。
-
+由支付宝直接调用，内部处理后返回 `success` 字符串�?
 ### 3.3 微信支付异步回调
 
 ```http
 POST /api/notify/wechat
 ```
 
-由微信直接调用，内部处理后返回 XML 格式响应。
-
+由微信直接调用，内部处理后返�?XML 格式响应�?
 ---
 
-## 四、管理接口（需 JWT 认证）
-
+## 四、管理接口（需 JWT 认证�?
 ### 4.1 订单管理
 
 ```http
@@ -323,8 +304,7 @@ PUT /api/configs/:key
 
 ---
 
-## 五、健康检查
-
+## 五、健康检�?
 ```http
 GET /health
 ```
@@ -333,10 +313,10 @@ GET /health
 {
   "status": "ok",
   "timestamp": "2024-01-01T00:00:00.000Z",
-  "service": "众支付"
+  "service": "众支�?
 }
 ```
 
 ---
 
-> **文档维护**：[AME](https://github.com/AME-dev) · 如发现文档错误请 [提交 Issue](https://github.com/AME-dev/zhong-pay/issues/new?template=bug_report.md)
+> **文档维护**：[AME](https://github.com/AME-CoLtd) · 如发现文档错误请 [提交 Issue](https://github.com/AME-CoLtd/Zhong-Pay/issues/new?template=bug_report.md)
