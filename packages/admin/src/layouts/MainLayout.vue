@@ -7,22 +7,14 @@
     >
       <!-- Logo -->
       <div
-        class="flex items-center justify-center h-16 border-b border-white/10 flex-shrink-0 overflow-hidden px-3"
+        class="flex items-center justify-center h-16 border-b border-white/10 flex-shrink-0 overflow-hidden px-2"
       >
-        <!-- 折叠：方形高清图标 -->
         <img
-          v-if="collapsed"
-          src="/logo-icon.png"
-          alt="众支付"
-          style="width:36px;height:36px;object-fit:contain"
-          class="transition-all duration-300"
-        />
-        <!-- 展开：横版 logo -->
-        <img
-          v-else
           src="/bt-logo-white.png"
           alt="众支付"
-          style="max-width:160px;height:36px;object-fit:contain;image-rendering:-webkit-optimize-contrast"
+          :style="collapsed
+            ? 'width:40px;height:40px;object-fit:contain;object-position:left center'
+            : 'width:152px;height:40px;object-fit:contain'"
           class="transition-all duration-300"
         />
       </div>
