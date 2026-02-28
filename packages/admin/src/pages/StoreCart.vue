@@ -39,8 +39,12 @@
         <div class="mt-4 flex items-center justify-between">
           <div class="text-gray-500">共 {{ list.length }} 件商品</div>
           <div class="flex items-center gap-4">
+            <el-select v-model="payChannel" class="w-40" size="small">
+              <el-option label="支付宝" value="ALIPAY_PC" />
+              <el-option label="微信扫码" value="WECHAT_NATIVE" />
+            </el-select>
             <div class="text-lg font-semibold">合计：<span class="text-red-500">¥{{ Number(totalAmount).toFixed(2) }}</span></div>
-            <el-button type="primary" :disabled="!list.length" @click="checkout">提交订单</el-button>
+            <el-button type="primary" :disabled="!list.length" @click="checkout">去支付</el-button>
           </div>
         </div>
       </el-card>
@@ -52,6 +56,8 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import storeRequest from '@/utils/storeRequest';
+
+const payChannel = ref('ALIPAY_PC');
 
 const loading = ref(false);
 const list = ref<any[]>([]);
@@ -80,8 +86,19 @@ async function removeItem(row: any) {
 }
 
 async function checkout() {
-  const res: any = await storeRequest.post('/orders/checkout');
-  ElMessage.success(`下单成功，订单号：${res.data.orderNo}`);
+  const res: any = await storeRequest.post('/orders/checkout', { channel: payChannel.value });
+  ElMessage.success(`下单成功，订单号：${res.data.customerOrderNo}`);
+
+  if (res.data.payUrl) {
+    window.location.href = res.data.payUrl;
+    return;
+  }
+
+  if (res.data.codeUrl) {
+    ElMessage.info('请使用微信扫码完成支付');
+    window.open(res.data.codeUrl, '_blank');
+  }
+
   fetchCart();
 }
 

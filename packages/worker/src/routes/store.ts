@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import type { Env } from '../index';
 import { authenticate, requireRole } from '../middlewares/auth';
 import { authenticateCustomer } from '../middlewares/customerAuth';
-import { hashPassword, signJWT, verifyPassword } from '../utils/crypto';
+import { generateOrderNo, hashPassword, signJWT, verifyPassword } from '../utils/crypto';
+import { createOrder } from '../utils/db';
 import { ensureStoreTables } from '../utils/storeDb';
 
 export const storeRoutes = new Hono<{ Bindings: Env }>();
@@ -338,6 +339,12 @@ storeRoutes.delete('/cart/items/:id', authenticateCustomer(), async (c) => {
 // --------- 客户订单（用户中心） ---------
 storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
   const customer = c.get('customer' as any) as any;
+  const { channel = 'ALIPAY_PC' } = await c.req.json<any>().catch(() => ({ channel: 'ALIPAY_PC' }));
+
+  if (!['ALIPAY_PC', 'ALIPAY_WAP', 'WECHAT_NATIVE'].includes(channel)) {
+    return c.json({ code: 400, message: '不支持的支付渠道' }, 400);
+  }
+
   const cart = await c.env.DB.prepare('SELECT id FROM carts WHERE customer_id=?').bind(customer.customerId).first<{ id: string }>();
   if (!cart) return c.json({ code: 400, message: '购物车为空' }, 400);
 
@@ -355,14 +362,19 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
     if (Number(it.quantity) > Number(it.stock || 0)) return c.json({ code: 400, message: `库存不足：${it.name}` }, 400);
   }
 
-  const orderId = crypto.randomUUID();
-  const orderNo = `CO${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
+  const merchant = await c.env.DB.prepare("SELECT * FROM merchants WHERE status='ACTIVE' ORDER BY created_at ASC LIMIT 1").first<any>();
+  if (!merchant) {
+    return c.json({ code: 400, message: '暂无可用商户，请先在后台创建并启用商户' }, 400);
+  }
+
+  const customerOrderId = crypto.randomUUID();
+  const customerOrderNo = `CO${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
   const totalAmount = items.reduce((s, it) => s + Number(it.price_snapshot) * Number(it.quantity), 0);
 
   await c.env.DB.prepare(
     `INSERT INTO customer_orders (id,order_no,customer_id,total_amount,status,updated_at)
      VALUES (?,?,?,?, 'PENDING', datetime('now'))`
-  ).bind(orderId, orderNo, customer.customerId, totalAmount).run();
+  ).bind(customerOrderId, customerOrderNo, customer.customerId, totalAmount).run();
 
   for (const it of items) {
     await c.env.DB.prepare(
@@ -370,7 +382,7 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
        VALUES (?,?,?,?,?,?,?,?)`
     ).bind(
       crypto.randomUUID(),
-      orderId,
+      customerOrderId,
       it.product_id,
       it.name,
       it.cover,
@@ -384,10 +396,55 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
     ).bind(Number(it.quantity), it.product_id).run();
   }
 
+  const payOrderNo = generateOrderNo();
+  const payOrderId = crypto.randomUUID();
+  const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+  await createOrder(c.env.DB, {
+    id: payOrderId,
+    orderNo: payOrderNo,
+    merchantId: merchant.id,
+    outTradeNo: customerOrderNo,
+    subject: `商城订单-${customerOrderNo}`,
+    amount: totalAmount,
+    payType: channel.startsWith('ALIPAY') ? 'ALIPAY' : 'WECHAT',
+    channel,
+    clientIp: c.req.header('CF-Connecting-IP') || '',
+    notifyUrl: merchant.notify_url || '',
+    returnUrl: merchant.return_url || '',
+    expiredAt,
+  });
+
+  let payData: Record<string, string> = {};
+  try {
+    payData = await callStorePayChannel(channel, {
+      orderNo: payOrderNo,
+      amount: String(totalAmount),
+      subject: `商城订单-${customerOrderNo}`,
+      notifyUrl: merchant.notify_url || c.env.ALIPAY_NOTIFY_URL,
+      returnUrl: merchant.return_url || '',
+      clientIp: c.req.header('CF-Connecting-IP') || '127.0.0.1',
+      env: c.env,
+    });
+  } catch (err: any) {
+    return c.json({ code: 500, message: `创建支付单失败: ${err.message}` }, 500);
+  }
+
   await c.env.DB.prepare('DELETE FROM cart_items WHERE cart_id=?').bind(cart.id).run();
   await c.env.DB.prepare('UPDATE carts SET updated_at=datetime(\'now\') WHERE id=?').bind(cart.id).run();
 
-  return c.json({ code: 0, message: '下单成功', data: { orderNo, totalAmount } });
+  return c.json({
+    code: 0,
+    message: '下单成功，请完成支付',
+    data: {
+      customerOrderNo,
+      payOrderNo,
+      totalAmount,
+      channel,
+      expiredAt,
+      ...payData,
+    },
+  });
 });
 
 storeRoutes.get('/orders', authenticateCustomer(), async (c) => {
@@ -420,3 +477,53 @@ storeRoutes.get('/orders', authenticateCustomer(), async (c) => {
 
   return c.json({ code: 0, data: list });
 });
+
+async function callStorePayChannel(
+  channel: string,
+  params: { orderNo: string; amount: string; subject: string; notifyUrl: string; returnUrl: string; clientIp: string; env: Env }
+): Promise<Record<string, string>> {
+  if (channel === 'ALIPAY_PC' || channel === 'ALIPAY_WAP') {
+    const bizContent = JSON.stringify({
+      out_trade_no: params.orderNo,
+      total_amount: Number(params.amount).toFixed(2),
+      subject: params.subject,
+      product_code: channel === 'ALIPAY_PC' ? 'FAST_INSTANT_TRADE_PAY' : 'QUICK_WAP_WAY',
+    });
+    const method = channel === 'ALIPAY_PC' ? 'alipay.trade.page.pay' : 'alipay.trade.wap.pay';
+    const queryParams = new URLSearchParams({
+      app_id: params.env.ALIPAY_APP_ID,
+      method,
+      charset: 'utf-8',
+      sign_type: 'RSA2',
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      version: '1.0',
+      notify_url: params.notifyUrl,
+      return_url: params.returnUrl,
+      biz_content: bizContent,
+    });
+    return { payUrl: `https://openapi.alipay.com/gateway.do?${queryParams.toString()}` };
+  }
+
+  if (channel === 'WECHAT_NATIVE') {
+    const resp = await fetch('https://api.mch.weixin.qq.com/v3/pay/transactions/native', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${params.env.WECHAT_MCH_ID}"`,
+      },
+      body: JSON.stringify({
+        appid: params.env.WECHAT_APP_ID,
+        mchid: params.env.WECHAT_MCH_ID,
+        description: params.subject,
+        out_trade_no: params.orderNo,
+        notify_url: params.notifyUrl,
+        amount: { total: Math.round(Number(params.amount) * 100), currency: 'CNY' },
+      }),
+    });
+    const result: any = await resp.json();
+    if (result.code_url) return { codeUrl: result.code_url };
+    throw new Error(result.message || '微信支付下单失败');
+  }
+
+  throw new Error(`不支持的支付渠道: ${channel}`);
+}
