@@ -1,7 +1,7 @@
 import type { D1Database } from './db';
 
 export async function ensureStoreTables(db: D1Database) {
-  await db.exec(`
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -12,8 +12,10 @@ export async function ensureStoreTables(db: D1Database) {
       status TEXT NOT NULL DEFAULT 'OFF_SHELF',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+    )
+  `).run();
 
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS customers (
       id TEXT PRIMARY KEY,
       username TEXT NOT NULL UNIQUE,
@@ -24,16 +26,20 @@ export async function ensureStoreTables(db: D1Database) {
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+    )
+  `).run();
 
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS carts (
       id TEXT PRIMARY KEY,
       customer_id TEXT NOT NULL UNIQUE,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
-    );
+    )
+  `).run();
 
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS cart_items (
       id TEXT PRIMARY KEY,
       cart_id TEXT NOT NULL,
@@ -44,9 +50,12 @@ export async function ensureStoreTables(db: D1Database) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (cart_id) REFERENCES carts(id),
       FOREIGN KEY (product_id) REFERENCES products(id)
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_cart_items_unique ON cart_items(cart_id, product_id);
+    )
+  `).run();
 
+  await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_cart_items_unique ON cart_items(cart_id, product_id)').run();
+
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS customer_orders (
       id TEXT PRIMARY KEY,
       order_no TEXT NOT NULL UNIQUE,
@@ -56,8 +65,10 @@ export async function ensureStoreTables(db: D1Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
-    );
+    )
+  `).run();
 
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS customer_order_items (
       id TEXT PRIMARY KEY,
       order_id TEXT NOT NULL,
@@ -69,6 +80,6 @@ export async function ensureStoreTables(db: D1Database) {
       amount REAL NOT NULL,
       FOREIGN KEY (order_id) REFERENCES customer_orders(id),
       FOREIGN KEY (product_id) REFERENCES products(id)
-    );
-  `);
+    )
+  `).run();
 }
