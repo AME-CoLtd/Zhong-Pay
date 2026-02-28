@@ -77,4 +77,12 @@ router.beforeEach((to) => {
   }
 });
 
+router.afterEach((to) => {
+  if (to.path.startsWith('/store')) {
+    document.title = '众支付 - 商城';
+  } else {
+    document.title = '众支付 - 管理后台';
+  }
+});
+
 export default router;
