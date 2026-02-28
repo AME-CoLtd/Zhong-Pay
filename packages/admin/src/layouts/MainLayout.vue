@@ -38,10 +38,10 @@
 
       <!-- 折叠按钮 -->
       <div
-        class="flex items-center justify-center h-12 cursor-pointer text-white/40 hover:text-white/80 border-t border-white/10 transition-colors flex-shrink-0"
+        class="flex items-center justify-center h-14 cursor-pointer text-white/50 hover:text-white/90 border-t border-white/10 transition-colors flex-shrink-0"
         @click="collapsed = !collapsed"
       >
-        <el-icon :size="16"><component :is="collapsed ? 'Expand' : 'Fold'" /></el-icon>
+        <el-icon :size="30"><component :is="collapsed ? 'Expand' : 'Fold'" /></el-icon>
       </div>
     </el-aside>
 
