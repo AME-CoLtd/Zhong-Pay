@@ -18,6 +18,29 @@
         </template>
         <el-alert title="邮件发送使用 QQ 邮箱 SMTP，需填写 QQ 邮箱地址和 16 位授权码（非 QQ 密码）" type="info" show-icon :closable="false" class="mb-4" />
         <ConfigTable :items="emailConfigs" @edit="openEdit" />
+
+        <!-- 测试发送区域 -->
+        <div class="mt-6 pt-5 border-t border-gray-100">
+          <div class="text-sm font-medium text-gray-700 mb-3">发送测试邮件</div>
+          <div class="flex gap-3 items-start">
+            <el-input
+              v-model="testEmailTo"
+              placeholder="输入收件邮箱地址"
+              class="max-w-xs"
+              clearable
+              @keyup.enter="sendTestEmail"
+            />
+            <el-button
+              type="primary"
+              :loading="testEmailLoading"
+              :disabled="!testEmailTo"
+              @click="sendTestEmail"
+            >
+              发送测试
+            </el-button>
+          </div>
+          <p class="text-xs text-gray-400 mt-2">发送前请确保已保存发件邮箱和授权码配置</p>
+        </div>
       </el-tab-pane>
 
       <!-- 支付宝 -->
@@ -199,15 +222,17 @@ const ConfigTable = defineComponent({
 });
 
 // ---- 状态 ----
-const activeTab   = ref('general');
-const smsCollapse = ref(['tencent']);
-const configMap   = ref<Record<string, string>>({});
-const loading     = ref(false);
-const editVisible = ref(false);
-const saving      = ref(false);
-const editItem    = ref<any>(null);
-const editFormRef = ref<FormInstance>();
-const editForm    = ref({ value: '' });
+const activeTab        = ref('general');
+const smsCollapse      = ref(['tencent']);
+const configMap        = ref<Record<string, string>>({});
+const loading          = ref(false);
+const editVisible      = ref(false);
+const saving           = ref(false);
+const editItem         = ref<any>(null);
+const editFormRef      = ref<FormInstance>();
+const editForm         = ref({ value: '' });
+const testEmailTo      = ref('');
+const testEmailLoading = ref(false);
 
 // ---- 配置分组定义 ----
 const generalConfigs = computed(() => makeItems([
@@ -320,6 +345,19 @@ async function handleSave() {
     editVisible.value = false;
   } finally {
     saving.value = false;
+  }
+}
+
+async function sendTestEmail() {
+  if (!testEmailTo.value) return;
+  testEmailLoading.value = true;
+  try {
+    await request.post('/configs/test-email', { to: testEmailTo.value });
+    ElMessage.success('测试邮件已发送，请检查收件箱');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message ?? e?.message ?? '发送失败');
+  } finally {
+    testEmailLoading.value = false;
   }
 }
 
