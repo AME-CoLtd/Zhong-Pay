@@ -432,6 +432,24 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
   const customerOrderId = crypto.randomUUID();
   const customerOrderNo = `CO${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
   const totalAmount = items.reduce((s, it) => s + Number(it.price_snapshot) * Number(it.quantity), 0);
+  const payOrderNo = generateOrderNo();
+  const payOrderId = crypto.randomUUID();
+  const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+  let payData: Record<string, string> = {};
+  try {
+    payData = await callStorePayChannel(channel, {
+      orderNo: payOrderNo,
+      amount: String(totalAmount),
+      subject: `商城订单-${customerOrderNo}`,
+      notifyUrl: merchant.notify_url || c.env.ALIPAY_NOTIFY_URL,
+      returnUrl: merchant.return_url || '',
+      clientIp: c.req.header('CF-Connecting-IP') || '127.0.0.1',
+      env: c.env,
+    });
+  } catch (err: any) {
+    return c.json({ code: 500, message: `创建支付单失败: ${err.message}` }, 500);
+  }
 
   await c.env.DB.prepare(
     `INSERT INTO customer_orders (id,order_no,customer_id,total_amount,status,updated_at)
@@ -458,10 +476,6 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
     ).bind(Number(it.quantity), it.product_id).run();
   }
 
-  const payOrderNo = generateOrderNo();
-  const payOrderId = crypto.randomUUID();
-  const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
   await createOrder(c.env.DB, {
     id: payOrderId,
     orderNo: payOrderNo,
@@ -476,21 +490,6 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
     returnUrl: merchant.return_url || '',
     expiredAt,
   });
-
-  let payData: Record<string, string> = {};
-  try {
-    payData = await callStorePayChannel(channel, {
-      orderNo: payOrderNo,
-      amount: String(totalAmount),
-      subject: `商城订单-${customerOrderNo}`,
-      notifyUrl: merchant.notify_url || c.env.ALIPAY_NOTIFY_URL,
-      returnUrl: merchant.return_url || '',
-      clientIp: c.req.header('CF-Connecting-IP') || '127.0.0.1',
-      env: c.env,
-    });
-  } catch (err: any) {
-    return c.json({ code: 500, message: `创建支付单失败: ${err.message}` }, 500);
-  }
 
   await c.env.DB.prepare('DELETE FROM cart_items WHERE cart_id=?').bind(cart.id).run();
   await c.env.DB.prepare('UPDATE carts SET updated_at=datetime(\'now\') WHERE id=?').bind(cart.id).run();
@@ -601,6 +600,9 @@ async function callStorePayChannel(
   }
 
   if (channel === 'WECHAT_NATIVE') {
+    if (!params.env.WECHAT_APP_ID || !params.env.WECHAT_MCH_ID) {
+      throw new Error('微信支付参数未配置，请先在系统配置中填写并同步到环境变量');
+    }
     const resp = await fetch('https://api.mch.weixin.qq.com/v3/pay/transactions/native', {
       method: 'POST',
       headers: {
@@ -616,9 +618,9 @@ async function callStorePayChannel(
         amount: { total: Math.round(Number(params.amount) * 100), currency: 'CNY' },
       }),
     });
-    const result: any = await resp.json();
+    const result: any = await resp.json().catch(() => ({}));
     if (result.code_url) return { codeUrl: result.code_url };
-    throw new Error(result.message || '微信支付下单失败');
+    throw new Error(result.message || '微信支付配置错误或未开通（当前环境未完成证书签名接入）');
   }
 
   throw new Error(`不支持的支付渠道: ${channel}`);
