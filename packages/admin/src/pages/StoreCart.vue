@@ -2,11 +2,17 @@
   <div class="min-h-screen bg-gray-50">
     <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
       <h1 class="text-lg font-semibold">购物车</h1>
-      <div class="flex items-center gap-4 text-sm">
-        <router-link to="/store">首页</router-link>
-        <router-link to="/store/cart" class="text-blue-600">购物车</router-link>
-        <router-link to="/store/me">用户中心</router-link>
-      </div>
+      <el-dropdown @command="handleCommand">
+        <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer">菜单</span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="home">首页</el-dropdown-item>
+            <el-dropdown-item command="cart">购物车</el-dropdown-item>
+            <el-dropdown-item command="me">用户中心</el-dropdown-item>
+            <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
 
     <div class="max-w-5xl mx-auto p-6">
@@ -54,9 +60,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import storeRequest from '@/utils/storeRequest';
 
+const router = useRouter();
 const payChannel = ref('ALIPAY_PC');
 
 const loading = ref(false);
@@ -100,6 +108,17 @@ async function checkout() {
   }
 
   fetchCart();
+}
+
+function handleCommand(cmd: string) {
+  if (cmd === 'home') router.push('/store');
+  else if (cmd === 'cart') router.push('/store/cart');
+  else if (cmd === 'me') router.push('/store/me');
+  else if (cmd === 'logout') {
+    localStorage.removeItem('zp_customer_token');
+    localStorage.removeItem('zp_customer_info');
+    router.push('/store/login');
+  }
 }
 
 fetchCart();

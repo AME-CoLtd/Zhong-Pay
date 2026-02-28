@@ -2,11 +2,19 @@
   <div class="min-h-screen bg-gray-50">
     <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
       <h1 class="text-lg font-semibold">用户中心</h1>
-      <div class="flex items-center gap-4 text-sm">
-        <router-link to="/store">首页</router-link>
-        <router-link to="/store/cart">购物车</router-link>
-        <router-link to="/store/me" class="text-blue-600">用户中心</router-link>
-      </div>
+      <el-dropdown @command="handleCommand">
+        <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer">
+          {{ form.nickname || form.username || '账户' }}
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="home">首页</el-dropdown-item>
+            <el-dropdown-item command="cart">购物车</el-dropdown-item>
+            <el-dropdown-item command="me">用户中心</el-dropdown-item>
+            <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
 
     <div class="max-w-5xl mx-auto p-6 space-y-4">
@@ -28,7 +36,10 @@
           <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-lg p-4">
             <div class="flex items-center justify-between mb-2 text-sm">
               <span>订单号：{{ order.orderNo }}</span>
-              <el-tag size="small" type="warning">{{ order.status }}</el-tag>
+              <div class="flex items-center gap-2">
+                <el-tag size="small" :type="order.status === 'PENDING' ? 'warning' : order.status === 'CLOSED' ? 'info' : 'success'">{{ order.status }}</el-tag>
+                <el-button v-if="order.status === 'PENDING'" type="danger" link size="small" @click="cancelOrder(order.orderNo)">取消订单</el-button>
+              </div>
             </div>
             <div class="text-xs text-gray-400 mb-2">{{ order.createdAt }}</div>
             <div v-for="it in order.items" :key="`${order.id}-${it.product_name}`" class="flex justify-between text-sm py-1">
@@ -45,8 +56,11 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import storeRequest from '@/utils/storeRequest';
+
+const router = useRouter();
 
 const form = reactive<any>({ username: '', nickname: '', email: '', phone: '' });
 const orders = ref<any[]>([]);
@@ -73,6 +87,23 @@ async function saveProfile() {
 async function fetchOrders() {
   const res: any = await storeRequest.get('/orders');
   orders.value = res.data;
+}
+
+async function cancelOrder(orderNo: string) {
+  await storeRequest.post(`/orders/${orderNo}/cancel`);
+  ElMessage.success('订单已取消');
+  fetchOrders();
+}
+
+function handleCommand(cmd: string) {
+  if (cmd === 'home') router.push('/store');
+  else if (cmd === 'cart') router.push('/store/cart');
+  else if (cmd === 'me') router.push('/store/me');
+  else if (cmd === 'logout') {
+    localStorage.removeItem('zp_customer_token');
+    localStorage.removeItem('zp_customer_info');
+    router.push('/store/login');
+  }
 }
 
 fetchProfile();

@@ -2,13 +2,20 @@
   <div class="min-h-screen bg-gray-50">
     <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
       <h1 class="text-lg font-semibold">商城</h1>
-      <div class="flex items-center gap-4 text-sm">
-        <router-link to="/store" class="text-blue-600">首页</router-link>
-        <router-link to="/store/cart">购物车</router-link>
-        <router-link to="/store/me">用户中心</router-link>
-        <router-link v-if="!customer" to="/store/login">登录</router-link>
-        <span v-else class="text-gray-500">{{ customer.nickname || customer.username }}</span>
-      </div>
+      <el-dropdown @command="handleCommand">
+        <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer">
+          {{ customer ? (customer.nickname || customer.username) : '菜单' }}
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="home">首页</el-dropdown-item>
+            <el-dropdown-item command="cart">购物车</el-dropdown-item>
+            <el-dropdown-item command="me">用户中心</el-dropdown-item>
+            <el-dropdown-item v-if="!customer" command="login">登录</el-dropdown-item>
+            <el-dropdown-item v-else divided command="logout">退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
 
     <div class="max-w-6xl mx-auto p-6">
@@ -37,8 +44,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import storeRequest from '@/utils/storeRequest';
+
+const router = useRouter();
 
 const products = ref<any[]>([]);
 const keyword = ref('');
@@ -56,6 +66,19 @@ async function addToCart(item: any) {
   }
   await storeRequest.post('/cart/items', { productId: item.id, quantity: 1 });
   ElMessage.success('已加入购物车');
+}
+
+function handleCommand(cmd: string) {
+  if (cmd === 'home') router.push('/store');
+  else if (cmd === 'cart') router.push('/store/cart');
+  else if (cmd === 'me') router.push('/store/me');
+  else if (cmd === 'login') router.push('/store/login');
+  else if (cmd === 'logout') {
+    localStorage.removeItem('zp_customer_token');
+    localStorage.removeItem('zp_customer_info');
+    customer.value = null;
+    router.push('/store/login');
+  }
 }
 
 fetchProducts();

@@ -447,6 +447,40 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
   });
 });
 
+storeRoutes.post('/orders/:orderNo/cancel', authenticateCustomer(), async (c) => {
+  const customer = c.get('customer' as any) as any;
+  const orderNo = c.req.param('orderNo');
+
+  const order = await c.env.DB.prepare(
+    `SELECT id,order_no,status FROM customer_orders WHERE order_no=? AND customer_id=?`
+  ).bind(orderNo, customer.customerId).first<any>();
+
+  if (!order) return c.json({ code: 404, message: '订单不存在' }, 404);
+  if (order.status !== 'PENDING') {
+    return c.json({ code: 400, message: '仅待支付订单可取消' }, 400);
+  }
+
+  const itemsRes = await c.env.DB.prepare(
+    `SELECT product_id, quantity FROM customer_order_items WHERE order_id=?`
+  ).bind(order.id).all<any>();
+
+  for (const it of itemsRes.results ?? []) {
+    await c.env.DB.prepare(
+      `UPDATE products SET stock = stock + ?, updated_at=datetime('now') WHERE id=?`
+    ).bind(Number(it.quantity), it.product_id).run();
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE customer_orders SET status='CLOSED', updated_at=datetime('now') WHERE id=?`
+  ).bind(order.id).run();
+
+  await c.env.DB.prepare(
+    `UPDATE orders SET status='CLOSED', updated_at=datetime('now') WHERE out_trade_no=? AND status='PENDING'`
+  ).bind(orderNo).run();
+
+  return c.json({ code: 0, message: '订单已取消' });
+});
+
 storeRoutes.get('/orders', authenticateCustomer(), async (c) => {
   const customer = c.get('customer' as any) as any;
   const ordersRes = await c.env.DB.prepare(
