@@ -107,6 +107,7 @@ const menuItems = computed(() => {
     { path: '/orders',      label: '订单管理',  icon: 'ShoppingCart' },
     { path: '/merchants',   label: '商户管理',  icon: 'Shop' },
     { path: '/withdrawals', label: '提现管理',  icon: 'Wallet' },
+    { path: '/products',    label: '商品管理',  icon: 'Goods', roles: ['SUPER_ADMIN', 'ADMIN'] },
     { path: '/config',      label: '系统配置',  icon: 'Setting', roles: ['SUPER_ADMIN', 'ADMIN'] },
     { path: '/admins',      label: '管理用户',  icon: 'UserFilled', roles: ['SUPER_ADMIN'] },
   ];
@@ -118,6 +119,7 @@ const pageNameMap: Record<string, string> = {
   '/orders':      '订单管理',
   '/merchants':   '商户管理',
   '/withdrawals': '提现管理',
+  '/products':    '商品管理',
   '/config':      '系统配置',
   '/admins':      '管理用户',
   '/profile':     '个人设置',

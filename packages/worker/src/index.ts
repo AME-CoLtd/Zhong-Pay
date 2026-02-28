@@ -21,6 +21,7 @@ import { statsRoutes } from './routes/stats';
 import { configRoutes } from './routes/configs';
 import { withdrawalRoutes } from './routes/withdrawals';
 import { adminRoutes } from './routes/admins';
+import { storeRoutes } from './routes/store';
 import { rateLimiter } from './middlewares/rateLimiter';
 
 export interface Env {
@@ -82,6 +83,7 @@ app.route('/api/stats', statsRoutes);
 app.route('/api/configs', configRoutes);
 app.route('/api/withdrawals', withdrawalRoutes);
 app.route('/api/admins', adminRoutes);
+app.route('/api/store', storeRoutes);
 
 // 404
 app.notFound((c) => c.json({ code: 404, message: '接口不存在' }, 404));
