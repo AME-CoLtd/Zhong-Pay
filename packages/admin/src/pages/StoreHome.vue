@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50">
     <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
       <h1 class="text-lg font-semibold">商城</h1>
-      <el-dropdown @command="handleCommand">
+      <el-dropdown @command="handleCommand" placement="bottom-end" class="mr-3">
         <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer">
           {{ customer ? (customer.nickname || customer.username) : '菜单' }}
         </span>
