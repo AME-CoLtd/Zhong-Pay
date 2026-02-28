@@ -47,6 +47,7 @@ const router = createRouter({
         { path: 'dashboard',   name: 'Dashboard',   component: () => import('@/pages/Dashboard.vue') },
         { path: 'orders',      name: 'Orders',      component: () => import('@/pages/Orders.vue') },
         { path: 'merchants',   name: 'Merchants',   component: () => import('@/pages/Merchants.vue') },
+        { path: 'customers',   name: 'Customers',   component: () => import('@/pages/Customers.vue'), meta: { roles: ['SUPER_ADMIN', 'ADMIN'] } },
         { path: 'withdrawals', name: 'Withdrawals', component: () => import('@/pages/Withdrawals.vue') },
         { path: 'products',    name: 'Products',    component: () => import('@/pages/Products.vue'), meta: { roles: ['SUPER_ADMIN', 'ADMIN'] } },
         { path: 'config',      name: 'Config',      component: () => import('@/pages/Config.vue'), meta: { roles: ['SUPER_ADMIN', 'ADMIN'] } },

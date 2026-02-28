@@ -134,6 +134,68 @@ storeRoutes.post('/admin/products/:id/toggle', authenticate(), requireRole('SUPE
   return c.json({ code: 0, message: next === 'ON_SHELF' ? '已上架' : '已下架', data: { status: next } });
 });
 
+// --------- 客户管理（后台） ---------
+storeRoutes.get('/admin/customers', authenticate(), requireRole('SUPER_ADMIN', 'ADMIN'), async (c) => {
+  const { keyword = '', page = '1', pageSize = '20' } = c.req.query();
+  const p = Math.max(1, parseInt(page, 10) || 1);
+  const ps = Math.max(1, Math.min(100, parseInt(pageSize, 10) || 20));
+  const offset = (p - 1) * ps;
+  const kw = `%${keyword}%`;
+
+  const [listRes, totalRes] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT id,username,nickname,email,phone,is_active,created_at,updated_at
+       FROM customers
+       WHERE username LIKE ? OR nickname LIKE ? OR email LIKE ? OR phone LIKE ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`
+    ).bind(kw, kw, kw, kw, ps, offset).all<any>(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM customers WHERE username LIKE ? OR nickname LIKE ? OR email LIKE ? OR phone LIKE ?`
+    ).bind(kw, kw, kw, kw).first<{ count: number }>(),
+  ]);
+
+  return c.json({ code: 0, data: { list: listRes.results ?? [], total: totalRes?.count ?? 0, page: p, pageSize: ps } });
+});
+
+storeRoutes.put('/admin/customers/:id', authenticate(), requireRole('SUPER_ADMIN', 'ADMIN'), async (c) => {
+  const id = c.req.param('id');
+  const { nickname, email, phone, isActive } = await c.req.json<any>();
+
+  const existed = await c.env.DB.prepare('SELECT id FROM customers WHERE id=?').bind(id).first();
+  if (!existed) return c.json({ code: 404, message: '客户不存在' }, 404);
+
+  await c.env.DB.prepare(
+    `UPDATE customers SET nickname=?, email=?, phone=?, is_active=?, updated_at=datetime('now') WHERE id=?`
+  ).bind(
+    nickname ? String(nickname) : null,
+    email ? String(email) : null,
+    phone ? String(phone) : null,
+    isActive ? 1 : 0,
+    id,
+  ).run();
+
+  return c.json({ code: 0, message: '客户更新成功' });
+});
+
+storeRoutes.post('/admin/customers/:id/reset-password', authenticate(), requireRole('SUPER_ADMIN', 'ADMIN'), async (c) => {
+  const id = c.req.param('id');
+  const { password } = await c.req.json<any>();
+  if (!password || String(password).length < 6) {
+    return c.json({ code: 400, message: '新密码至少6位' }, 400);
+  }
+
+  const existed = await c.env.DB.prepare('SELECT id FROM customers WHERE id=?').bind(id).first();
+  if (!existed) return c.json({ code: 404, message: '客户不存在' }, 404);
+
+  const hashed = await hashPassword(String(password));
+  await c.env.DB.prepare(
+    `UPDATE customers SET password=?, updated_at=datetime('now') WHERE id=?`
+  ).bind(hashed, id).run();
+
+  return c.json({ code: 0, message: '密码重置成功' });
+});
+
 // --------- 客户认证 ---------
 storeRoutes.post('/auth/register', async (c) => {
   const { username, password, nickname, email, phone } = await c.req.json<any>();
