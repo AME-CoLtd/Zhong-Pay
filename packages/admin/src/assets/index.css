@@ -38,3 +38,14 @@ body {
 .el-menu--collapse .el-menu-item span {
   display: none;
 }
+
+.el-dropdown .el-tooltip__trigger,
+.el-dropdown-link,
+.el-dropdown-link:focus,
+.el-dropdown-link:focus-visible,
+.el-dropdown .el-tooltip__trigger:focus,
+.el-dropdown .el-tooltip__trigger:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}

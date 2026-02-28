@@ -3,7 +3,7 @@
     <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
       <h1 class="text-lg font-semibold">购物车</h1>
       <el-dropdown @command="handleCommand" placement="bottom-end" class="mr-3">
-        <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer">菜单</span>
+        <span class="el-dropdown-link text-sm text-gray-600 cursor-pointer outline-none border-0 focus:outline-none focus-visible:outline-none">菜单</span>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="home">首页</el-dropdown-item>
