@@ -107,7 +107,7 @@ const menuItems = computed(() => {
     { path: '/orders',      label: '订单管理',  icon: 'ShoppingCart' },
     { path: '/merchants',   label: '商户管理',  icon: 'Shop' },
     { path: '/withdrawals', label: '提现管理',  icon: 'Wallet' },
-    { path: '/config',      label: '系统配置',  icon: 'Setting' },
+    { path: '/config',      label: '系统配置',  icon: 'Setting', roles: ['SUPER_ADMIN', 'ADMIN'] },
     { path: '/admins',      label: '管理用户',  icon: 'UserFilled', roles: ['SUPER_ADMIN'] },
   ];
   return all.filter((item) => !item.roles || item.roles.includes(role));
