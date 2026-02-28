@@ -137,7 +137,7 @@ const roleText = computed(() => {
 function handleCommand(cmd: string) {
   if (cmd === 'logout') {
     auth.logout();
-    router.push('/login');
+    router.push('/admin/login');
   } else if (cmd === 'profile') {
     router.push('/profile');
   }

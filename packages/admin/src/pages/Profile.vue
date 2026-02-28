@@ -141,7 +141,7 @@ async function changePassword() {
     await request.put('/auth/password', { oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword });
     ElMessage.success('密码修改成功，请重新登录');
     auth.logout();
-    window.location.href = '/login';
+    window.location.href = '/admin/login';
   } finally {
     pwdLoading.value = false;
   }

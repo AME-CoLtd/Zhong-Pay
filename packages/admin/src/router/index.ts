@@ -5,15 +5,17 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/login',
+      path: '/admin/login',
       name: 'Login',
       component: () => import('@/pages/Login.vue'),
     },
     {
-      path: '/forgot-password',
+      path: '/admin/forgot-password',
       name: 'ForgotPassword',
       component: () => import('@/pages/ForgotPassword.vue'),
     },
+    { path: '/login', redirect: '/admin/login' },
+    { path: '/forgot-password', redirect: '/admin/forgot-password' },
     {
       path: '/store',
       name: 'StoreHome',
@@ -59,7 +61,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore();
   if (to.meta.requiresAuth && !auth.token) {
-    return '/login';
+    return '/admin/login';
   }
 
   if (to.meta.requiresCustomerAuth && !localStorage.getItem('zp_customer_token')) {

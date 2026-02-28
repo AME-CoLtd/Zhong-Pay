@@ -58,13 +58,13 @@
       <template v-else>
         <el-result icon="success" title="密码重置成功" sub-title="请使用新密码登录">
           <template #extra>
-            <el-button type="primary" @click="router.push('/login')">立即登录</el-button>
+            <el-button type="primary" @click="router.push('/admin/login')">立即登录</el-button>
           </template>
         </el-result>
       </template>
 
       <div class="text-center mt-4">
-        <el-link :underline="false" @click="router.push('/login')">
+        <el-link :underline="false" @click="router.push('/admin/login')">
           <el-icon><ArrowLeft /></el-icon> 返回登录
         </el-link>
       </div>

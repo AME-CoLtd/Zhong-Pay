@@ -40,7 +40,7 @@
 
       <div class="text-center mt-5 flex justify-between items-center text-sm text-gray-400">
         <span>默认账号：admin / Admin@123456</span>
-        <el-link type="primary" :underline="false" @click="router.push('/forgot-password')">
+        <el-link type="primary" :underline="false" @click="router.push('/admin/forgot-password')">
           忘记密码？
         </el-link>
       </div>

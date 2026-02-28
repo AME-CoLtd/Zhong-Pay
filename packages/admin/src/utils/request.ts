@@ -34,7 +34,7 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       const auth = useAuthStore();
       auth.logout();
-      router.push('/login');
+      router.push('/admin/login');
       return Promise.reject(error);
     }
     const msg = error.response?.data?.message || error.message || '网络错误';
