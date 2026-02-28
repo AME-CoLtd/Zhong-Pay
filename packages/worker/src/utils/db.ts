@@ -60,6 +60,65 @@ export async function updateAdminPhone(db: D1Database, id: string, phone: string
   ).bind(phone, id).run();
 }
 
+export async function listAdmins(db: D1Database, page = 1, pageSize = 20) {
+  const offset = (page - 1) * pageSize;
+  const [list, total] = await Promise.all([
+    db.prepare(`
+      SELECT id,username,email,phone,role,is_active,last_login,created_at
+      FROM admins
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(pageSize, offset).all<any>(),
+    db.prepare('SELECT COUNT(*) as count FROM admins').first<{ count: number }>(),
+  ]);
+  return { list: list.results ?? [], total: total?.count ?? 0 };
+}
+
+export async function createAdmin(db: D1Database, data: {
+  id: string;
+  username: string;
+  password: string;
+  email?: string | null;
+  phone?: string | null;
+  role?: string;
+  isActive?: number;
+}) {
+  return db.prepare(`
+    INSERT INTO admins (id, username, password, email, phone, role, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    data.id,
+    data.username,
+    data.password,
+    data.email ?? null,
+    data.phone ?? null,
+    data.role ?? 'STAFF',
+    data.isActive ?? 1
+  ).run();
+}
+
+export async function updateAdmin(db: D1Database, id: string, data: {
+  email?: string | null;
+  phone?: string | null;
+  role?: string;
+  isActive?: number;
+}) {
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  if (data.email !== undefined) { fields.push('email = ?'); values.push(data.email); }
+  if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
+  if (data.role !== undefined) { fields.push('role = ?'); values.push(data.role); }
+  if (data.isActive !== undefined) { fields.push('is_active = ?'); values.push(data.isActive); }
+
+  if (!fields.length) return;
+
+  values.push(id);
+  return db.prepare(
+    `UPDATE admins SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+  ).bind(...values).run();
+}
+
 // ── Merchant ───────────────────────────────────────────
 export async function listMerchants(db: D1Database, page = 1, pageSize = 20) {
   const offset = (page - 1) * pageSize;

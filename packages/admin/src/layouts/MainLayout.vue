@@ -100,13 +100,18 @@ const auth   = useAuthStore();
 
 const collapsed = ref(false);
 
-const menuItems = [
-  { path: '/dashboard',   label: '数据总览',  icon: 'DataAnalysis' },
-  { path: '/orders',      label: '订单管理',  icon: 'ShoppingCart' },
-  { path: '/merchants',   label: '商户管理',  icon: 'Shop' },
-  { path: '/withdrawals', label: '提现管理',  icon: 'Wallet' },
-  { path: '/config',      label: '系统配置',  icon: 'Setting' },
-];
+const menuItems = computed(() => {
+  const role = auth.admin?.role || '';
+  const all = [
+    { path: '/dashboard',   label: '数据总览',  icon: 'DataAnalysis' },
+    { path: '/orders',      label: '订单管理',  icon: 'ShoppingCart' },
+    { path: '/merchants',   label: '商户管理',  icon: 'Shop' },
+    { path: '/withdrawals', label: '提现管理',  icon: 'Wallet' },
+    { path: '/config',      label: '系统配置',  icon: 'Setting' },
+    { path: '/admins',      label: '管理用户',  icon: 'UserFilled', roles: ['SUPER_ADMIN'] },
+  ];
+  return all.filter((item) => !item.roles || item.roles.includes(role));
+});
 
 const pageNameMap: Record<string, string> = {
   '/dashboard':   '数据总览',
@@ -114,6 +119,7 @@ const pageNameMap: Record<string, string> = {
   '/merchants':   '商户管理',
   '/withdrawals': '提现管理',
   '/config':      '系统配置',
+  '/admins':      '管理用户',
   '/profile':     '个人设置',
 };
 

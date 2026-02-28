@@ -25,6 +25,7 @@ const router = createRouter({
         { path: 'merchants',   name: 'Merchants',   component: () => import('@/pages/Merchants.vue') },
         { path: 'withdrawals', name: 'Withdrawals', component: () => import('@/pages/Withdrawals.vue') },
         { path: 'config',      name: 'Config',      component: () => import('@/pages/Config.vue') },
+        { path: 'admins',      name: 'Admins',      component: () => import('@/pages/AdminUsers.vue'), meta: { roles: ['SUPER_ADMIN'] } },
         { path: 'profile',     name: 'Profile',     component: () => import('@/pages/Profile.vue') },
       ],
     },
@@ -36,6 +37,14 @@ router.beforeEach((to) => {
   const auth = useAuthStore();
   if (to.meta.requiresAuth && !auth.token) {
     return '/login';
+  }
+
+  const roles = to.meta.roles as string[] | undefined;
+  if (roles?.length) {
+    const currentRole = auth.admin?.role || '';
+    if (!roles.includes(currentRole)) {
+      return '/dashboard';
+    }
   }
 });
 
