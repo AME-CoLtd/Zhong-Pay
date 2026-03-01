@@ -436,16 +436,25 @@ storeRoutes.post('/orders/checkout', authenticateCustomer(), async (c) => {
   const payOrderId = crypto.randomUUID();
   const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
+  const cfgRows = await c.env.DB.prepare(
+    "SELECT key, value FROM system_configs WHERE key IN ('alipay_app_id','alipay_notify_url','wechat_app_id','wechat_mch_id','wechat_notify_url')"
+  ).all<{ key: string; value: string }>();
+  const cfgMap: Record<string, string> = {};
+  for (const r of cfgRows.results ?? []) cfgMap[r.key] = r.value;
+
   let payData: Record<string, string> = {};
   try {
     payData = await callStorePayChannel(channel, {
       orderNo: payOrderNo,
       amount: String(totalAmount),
       subject: `商城订单-${customerOrderNo}`,
-      notifyUrl: merchant.notify_url || c.env.ALIPAY_NOTIFY_URL,
+      notifyUrl: merchant.notify_url || cfgMap.alipay_notify_url || cfgMap.wechat_notify_url || c.env.ALIPAY_NOTIFY_URL,
       returnUrl: merchant.return_url || '',
       clientIp: c.req.header('CF-Connecting-IP') || '127.0.0.1',
       env: c.env,
+      alipayAppId: cfgMap.alipay_app_id || c.env.ALIPAY_APP_ID,
+      wechatAppId: cfgMap.wechat_app_id || c.env.WECHAT_APP_ID,
+      wechatMchId: cfgMap.wechat_mch_id || c.env.WECHAT_MCH_ID,
     });
   } catch (err: any) {
     return c.json({ code: 500, message: `创建支付单失败: ${err.message}` }, 500);
@@ -575,9 +584,10 @@ storeRoutes.get('/orders', authenticateCustomer(), async (c) => {
 
 async function callStorePayChannel(
   channel: string,
-  params: { orderNo: string; amount: string; subject: string; notifyUrl: string; returnUrl: string; clientIp: string; env: Env }
+  params: { orderNo: string; amount: string; subject: string; notifyUrl: string; returnUrl: string; clientIp: string; env: Env; alipayAppId?: string; wechatAppId?: string; wechatMchId?: string }
 ): Promise<Record<string, string>> {
   if (channel === 'ALIPAY_PC' || channel === 'ALIPAY_WAP') {
+    if (!params.alipayAppId) throw new Error('支付宝 appid 未配置，请在系统配置填写 alipay_app_id');
     const bizContent = JSON.stringify({
       out_trade_no: params.orderNo,
       total_amount: Number(params.amount).toFixed(2),
@@ -586,7 +596,7 @@ async function callStorePayChannel(
     });
     const method = channel === 'ALIPAY_PC' ? 'alipay.trade.page.pay' : 'alipay.trade.wap.pay';
     const queryParams = new URLSearchParams({
-      app_id: params.env.ALIPAY_APP_ID,
+      app_id: params.alipayAppId,
       method,
       charset: 'utf-8',
       sign_type: 'RSA2',
@@ -600,18 +610,18 @@ async function callStorePayChannel(
   }
 
   if (channel === 'WECHAT_NATIVE') {
-    if (!params.env.WECHAT_APP_ID || !params.env.WECHAT_MCH_ID) {
-      throw new Error('微信支付参数未配置，请先在系统配置中填写并同步到环境变量');
+    if (!params.wechatAppId || !params.wechatMchId) {
+      throw new Error('微信支付参数未配置，请先在系统配置中填写 wechat_app_id 和 wechat_mch_id');
     }
     const resp = await fetch('https://api.mch.weixin.qq.com/v3/pay/transactions/native', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${params.env.WECHAT_MCH_ID}"`,
+        Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${params.wechatMchId}"`,
       },
       body: JSON.stringify({
-        appid: params.env.WECHAT_APP_ID,
-        mchid: params.env.WECHAT_MCH_ID,
+        appid: params.wechatAppId,
+        mchid: params.wechatMchId,
         description: params.subject,
         out_trade_no: params.orderNo,
         notify_url: params.notifyUrl,
