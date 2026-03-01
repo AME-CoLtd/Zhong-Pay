@@ -551,6 +551,108 @@ storeRoutes.post('/orders/:orderNo/cancel', authenticateCustomer(), async (c) =>
   return c.json({ code: 0, message: '订单已取消' });
 });
 
+storeRoutes.post('/orders/:orderNo/pay', authenticateCustomer(), async (c) => {
+  const customer = c.get('customer' as any) as any;
+  const orderNo = c.req.param('orderNo');
+
+  const order = await c.env.DB.prepare(
+    `SELECT id,order_no,total_amount,status FROM customer_orders WHERE order_no=? AND customer_id=?`
+  ).bind(orderNo, customer.customerId).first<any>();
+
+  if (!order) return c.json({ code: 404, message: '订单不存在' }, 404);
+  if (order.status !== 'PENDING') {
+    return c.json({ code: 400, message: '仅待支付订单可继续支付' }, 400);
+  }
+
+  const pendingPayOrder = await c.env.DB.prepare(
+    `SELECT id,order_no,merchant_id,subject,amount,pay_type,channel,notify_url,return_url
+     FROM orders
+     WHERE out_trade_no=? AND status='PENDING'
+     ORDER BY created_at DESC
+     LIMIT 1`
+  ).bind(orderNo).first<any>();
+
+  const latestPayOrder = pendingPayOrder || await c.env.DB.prepare(
+    `SELECT merchant_id,subject,pay_type,channel,notify_url,return_url
+     FROM orders
+     WHERE out_trade_no=?
+     ORDER BY created_at DESC
+     LIMIT 1`
+  ).bind(orderNo).first<any>();
+
+  const channel = String(latestPayOrder?.channel || 'ALIPAY_PC');
+  if (!['ALIPAY_PC', 'ALIPAY_WAP', 'WECHAT_NATIVE'].includes(channel)) {
+    return c.json({ code: 400, message: '订单支付渠道不支持' }, 400);
+  }
+
+  const merchant = latestPayOrder?.merchant_id
+    ? await c.env.DB.prepare('SELECT id,notify_url,return_url FROM merchants WHERE id=?').bind(latestPayOrder.merchant_id).first<any>()
+    : await c.env.DB.prepare("SELECT id,notify_url,return_url FROM merchants WHERE status='ACTIVE' ORDER BY created_at ASC LIMIT 1").first<any>();
+
+  if (!merchant) {
+    return c.json({ code: 400, message: '暂无可用商户，请先在后台创建并启用商户' }, 400);
+  }
+
+  const cfgRows = await c.env.DB.prepare(
+    "SELECT key, value FROM system_configs WHERE key IN ('alipay_app_id','alipay_notify_url','wechat_app_id','wechat_mch_id','wechat_notify_url')"
+  ).all<{ key: string; value: string }>();
+  const cfgMap: Record<string, string> = {};
+  for (const r of cfgRows.results ?? []) cfgMap[r.key] = r.value;
+
+  const payOrderNo = pendingPayOrder?.order_no || generateOrderNo();
+  const totalAmount = Number(pendingPayOrder?.amount ?? order.total_amount ?? 0);
+  const subject = String(latestPayOrder?.subject || `商城订单-${orderNo}`);
+
+  let payData: Record<string, string> = {};
+  try {
+    payData = await callStorePayChannel(channel, {
+      orderNo: payOrderNo,
+      amount: String(totalAmount),
+      subject,
+      notifyUrl: merchant.notify_url || cfgMap.alipay_notify_url || cfgMap.wechat_notify_url || c.env.ALIPAY_NOTIFY_URL,
+      returnUrl: merchant.return_url || '',
+      clientIp: c.req.header('CF-Connecting-IP') || '127.0.0.1',
+      env: c.env,
+      alipayAppId: cfgMap.alipay_app_id || c.env.ALIPAY_APP_ID,
+      wechatAppId: cfgMap.wechat_app_id || c.env.WECHAT_APP_ID,
+      wechatMchId: cfgMap.wechat_mch_id || c.env.WECHAT_MCH_ID,
+    });
+  } catch (err: any) {
+    return c.json({ code: 500, message: `创建支付单失败: ${err.message}` }, 500);
+  }
+
+  if (!pendingPayOrder) {
+    const payOrderId = crypto.randomUUID();
+    const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    await createOrder(c.env.DB, {
+      id: payOrderId,
+      orderNo: payOrderNo,
+      merchantId: merchant.id,
+      outTradeNo: orderNo,
+      subject,
+      amount: totalAmount,
+      payType: channel.startsWith('ALIPAY') ? 'ALIPAY' : 'WECHAT',
+      channel,
+      clientIp: c.req.header('CF-Connecting-IP') || '',
+      notifyUrl: merchant.notify_url || '',
+      returnUrl: merchant.return_url || '',
+      expiredAt,
+    });
+  }
+
+  return c.json({
+    code: 0,
+    message: '请完成支付',
+    data: {
+      customerOrderNo: orderNo,
+      payOrderNo,
+      totalAmount,
+      channel,
+      ...payData,
+    },
+  });
+});
+
 storeRoutes.get('/orders', authenticateCustomer(), async (c) => {
   const customer = c.get('customer' as any) as any;
   const ordersRes = await c.env.DB.prepare(

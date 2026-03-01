@@ -33,11 +33,12 @@
         <template #header><span class="font-medium">我的订单</span></template>
         <el-empty v-if="!orders.length" description="暂无订单" />
         <div v-else class="space-y-4">
-          <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-lg p-4">
+          <div v-for="order in pagedOrders" :key="order.id" class="border border-gray-100 rounded-lg p-4">
             <div class="flex items-center justify-between mb-2 text-sm">
               <span>订单号：{{ order.orderNo }}</span>
               <div class="flex items-center gap-2">
                 <el-tag size="small" :type="order.status === 'PENDING' ? 'warning' : order.status === 'CLOSED' ? 'info' : 'success'">{{ order.status }}</el-tag>
+                <el-button v-if="order.status === 'PENDING'" type="primary" link size="small" @click="goPay(order.orderNo)">去支付</el-button>
                 <el-button v-if="order.status === 'PENDING'" type="danger" link size="small" @click="cancelOrder(order.orderNo)">取消订单</el-button>
               </div>
             </div>
@@ -48,6 +49,16 @@
             </div>
             <div class="text-right font-semibold mt-2">合计：¥{{ Number(order.totalAmount).toFixed(2) }}</div>
           </div>
+          <div class="flex justify-end" v-if="orders.length > pageSize">
+            <el-pagination
+              background
+              layout="prev, pager, next"
+              :page-size="pageSize"
+              :total="orders.length"
+              :current-page="page"
+              @current-change="handlePageChange"
+            />
+          </div>
         </div>
       </el-card>
     </div>
@@ -55,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import storeRequest from '@/utils/storeRequest';
@@ -64,6 +75,13 @@ const router = useRouter();
 
 const form = reactive<any>({ username: '', nickname: '', email: '', phone: '' });
 const orders = ref<any[]>([]);
+const page = ref(1);
+const pageSize = 3;
+
+const pagedOrders = computed(() => {
+  const start = (page.value - 1) * pageSize;
+  return orders.value.slice(start, start + pageSize);
+});
 
 async function fetchProfile() {
   const res: any = await storeRequest.get('/me');
@@ -86,7 +104,27 @@ async function saveProfile() {
 
 async function fetchOrders() {
   const res: any = await storeRequest.get('/orders');
-  orders.value = res.data;
+  orders.value = res.data || [];
+  page.value = 1;
+}
+
+function handlePageChange(nextPage: number) {
+  page.value = nextPage;
+}
+
+async function goPay(orderNo: string) {
+  const res: any = await storeRequest.post(`/orders/${orderNo}/pay`);
+  const data = res.data || {};
+  if (data.payUrl) {
+    window.location.href = data.payUrl;
+    return;
+  }
+  if (data.codeUrl) {
+    window.open(data.codeUrl, '_blank');
+    ElMessage.success('请使用微信扫码完成支付');
+    return;
+  }
+  ElMessage.error('未获取到支付链接');
 }
 
 async function cancelOrder(orderNo: string) {
